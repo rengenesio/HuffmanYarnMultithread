@@ -1,4 +1,4 @@
-package br.ufrj.ppgi.huffmanyarnmultithreaded.decoder;
+package br.ufrj.ppgi.huffmanyarnmultithread.decoder;
 
 
 import java.io.IOException;
@@ -10,9 +10,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import br.ufrj.ppgi.huffmanyarnmultithreaded.SerializationUtility;
-import br.ufrj.ppgi.huffmanyarnmultithreaded.encoder.BitSet;
-import br.ufrj.ppgi.huffmanyarnmultithreaded.encoder.Codification;
+import br.ufrj.ppgi.huffmanyarnmultithread.SerializationUtility;
+import br.ufrj.ppgi.huffmanyarnmultithread.encoder.BitSet;
+import br.ufrj.ppgi.huffmanyarnmultithread.encoder.Codification;
 
 
 public class Decoder {

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package br.ufrj.ppgi.huffmanyarnmultithreaded.yarn;
+package br.ufrj.ppgi.huffmanyarnmultithread.yarn;
 
 
 import java.io.FileInputStream;

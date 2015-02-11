@@ -1,4 +1,4 @@
-package br.ufrj.ppgi.huffmanyarnmultithreaded.yarn;
+package br.ufrj.ppgi.huffmanyarnmultithread.yarn;
 
 
 import java.io.IOException;
@@ -57,9 +57,9 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.RackResolver;
 import org.apache.hadoop.yarn.util.Records;
 
-import br.ufrj.ppgi.huffmanyarnmultithreaded.Defines;
-import br.ufrj.ppgi.huffmanyarnmultithreaded.InputSplit;
-import br.ufrj.ppgi.huffmanyarnmultithreaded.encoder.Encoder;
+import br.ufrj.ppgi.huffmanyarnmultithread.Defines;
+import br.ufrj.ppgi.huffmanyarnmultithread.InputSplit;
+import br.ufrj.ppgi.huffmanyarnmultithread.encoder.Encoder;
 
 
 public class ApplicationMaster {

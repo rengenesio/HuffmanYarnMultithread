@@ -3,6 +3,6 @@
 mkdir bin
 mkdir release
 
-javac src/br/ufrj/ppgi/huffmanyarn/*.java src/br/ufrj/ppgi/huffmanyarn/encoder/*.java src/br/ufrj/ppgi/huffmanyarn/decoder/*.java src/br/ufrj/ppgi/huffmanyarn/yarn/*.java -d bin
+javac src/br/ufrj/ppgi/huffmanyarnmultithread/*.java src/br/ufrj/ppgi/huffmanyarnmultithread/encoder/*.java src/br/ufrj/ppgi/huffmanyarnmultithread/decoder/*.java src/br/ufrj/ppgi/huffmanyarnmultithread/yarn/*.java -d bin
 
 ant

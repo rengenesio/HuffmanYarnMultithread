@@ -1,4 +1,4 @@
-package br.ufrj.ppgi.huffmanyarnmultithreaded.encoder;
+package br.ufrj.ppgi.huffmanyarnmultithread.encoder;
 
 
 import java.util.Arrays;

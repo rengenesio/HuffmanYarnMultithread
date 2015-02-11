@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="create_jar" name="Create Jar for Project HuffmanYarn Multithreaded">
+<project default="create_jar" name="Create Jar for Project HuffmanYarnMultithread">
     <target name="create_jar">
-	<jar destfile="./release/huffmanyarnmultithreaded.jar" basedir="./bin">
+	<jar destfile="./release/huffmanyarnmultithread.jar" basedir="./bin">
 		<manifest>
-			<attribute name="Main-Class" value="br.ufrj.ppgi.huffmanyarnmultithreaded.Main"/>
+			<attribute name="Main-Class" value="br.ufrj.ppgi.huffmanyarnmultithread.Main"/>
 		</manifest>
 	</jar>
     </target>

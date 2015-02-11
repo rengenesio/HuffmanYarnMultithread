@@ -1,4 +1,4 @@
-package br.ufrj.ppgi.huffmanyarnmultithreaded.yarn;
+package br.ufrj.ppgi.huffmanyarnmultithread.yarn;
 
 
 import java.io.IOException;
@@ -37,7 +37,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 
-import br.ufrj.ppgi.huffmanyarnmultithreaded.Defines;
+import br.ufrj.ppgi.huffmanyarnmultithread.Defines;
 
 
 public class Client {

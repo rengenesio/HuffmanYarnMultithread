@@ -1,4 +1,4 @@
-package br.ufrj.ppgi.huffmanyarnmultithreaded;
+package br.ufrj.ppgi.huffmanyarnmultithread;
 
 
 public class Defines {

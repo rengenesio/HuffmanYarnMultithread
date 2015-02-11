@@ -1,4 +1,4 @@
-package br.ufrj.ppgi.huffmanyarnmultithreaded.encoder;
+package br.ufrj.ppgi.huffmanyarnmultithread.encoder;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -13,7 +13,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import br.ufrj.ppgi.huffmanyarnmultithreaded.SerializationUtility;
+import br.ufrj.ppgi.huffmanyarnmultithread.SerializationUtility;
 
 
 public final class Encoder {

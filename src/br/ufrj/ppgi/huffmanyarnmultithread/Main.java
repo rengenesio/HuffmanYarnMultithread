@@ -1,12 +1,12 @@
-package br.ufrj.ppgi.huffmanyarnmultithreaded;
+package br.ufrj.ppgi.huffmanyarnmultithread;
 
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import br.ufrj.ppgi.huffmanyarnmultithreaded.decoder.Decoder;
-import br.ufrj.ppgi.huffmanyarnmultithreaded.yarn.Client;
+import br.ufrj.ppgi.huffmanyarnmultithread.decoder.Decoder;
+import br.ufrj.ppgi.huffmanyarnmultithread.yarn.Client;
 
 
 public class Main {

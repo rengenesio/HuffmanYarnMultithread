@@ -1,4 +1,4 @@
-package br.ufrj.ppgi.huffmanyarnmultithreaded;
+package br.ufrj.ppgi.huffmanyarnmultithread;
 
 
 import java.io.ByteArrayOutputStream;
@@ -6,7 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import br.ufrj.ppgi.huffmanyarnmultithreaded.encoder.Codification;
+import br.ufrj.ppgi.huffmanyarnmultithread.encoder.Codification;
 
 
 public class SerializationUtility {

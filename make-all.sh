@@ -2,6 +2,6 @@
 
 ./make-clean.sh
 
-git pull https://github.com/rengenesio/HuffmanYarnMultithreaded.git
+git pull https://github.com/rengenesio/HuffmanYarnMultithread.git
 
 ./make.sh
