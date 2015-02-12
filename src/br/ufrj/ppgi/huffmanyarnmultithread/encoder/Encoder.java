@@ -42,15 +42,10 @@ public final class Encoder {
 		this.conf = new Configuration();
 
 		this.fileName = args[0];
-				
+
+		this.inputSplitCollection = new ArrayList<InputSplit>();
+		
 		String[] inputSplitStringCollection = StringUtils.split(args[1], ':');
-		
-		for(String s : inputSplitStringCollection) {
-			System.out.println("Exploded ':' : " + s);
-		}
-		
-		System.out.println("--------");
-		
 		for(String inputSplitString : inputSplitStringCollection) {
 			System.out.println("Exploded ':' : " + inputSplitString);
 			
