@@ -27,7 +27,7 @@ public final class Encoder {
 	// Array of byte arrays (each byte array represents a input split byte sequence) 
 	private byte[][] memory;	
 	// Associates a inputSplit with a index in memory matrix
-	private int[] memoryPart;
+	private int[] memoryPartMap;
 	
 	private int[][] frequencyMatrix;
 	private long[] totalFrequencyArray;
@@ -81,7 +81,13 @@ public final class Encoder {
 			System.out.print("  ->  ");
 			
 			String[] s = StringUtils.split(action, ' ');
-			System.out.println(memory[Integer.parseInt(s[1])][0] + memory[Integer.parseInt(s[1])][1] + memory[Integer.parseInt(s[1])][2] + memory[Integer.parseInt(s[1])][3]);
+			int memoryPart = -1;
+			for(int i = 0 ; i < numTotalInputSplits ; i++) {
+				if(Integer.parseInt(s[1]) == this.memoryPartMap[i]) {
+					memoryPart = i;
+				}
+			}
+			System.out.println(memory[memoryPart][0] + memory[memoryPart][1] + memory[memoryPart][2] + memory[memoryPart][3]);
 		}
 
 //		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
@@ -299,7 +305,7 @@ public final class Encoder {
 		FSDataInputStream f = fs.open(path);
 		
 		memory = new byte[this.numTotalInputSplits][];
-		memoryPart = new int[this.numTotalInputSplits];
+		memoryPartMap = new int[this.numTotalInputSplits];
 
 		int i = 0;
 		boolean memoryFull = false;
@@ -312,7 +318,7 @@ public final class Encoder {
 					f.read(inputSplit.offset, memory[i], 0, inputSplit.length);
 					memory[i][inputSplit.length - 1] = 0;
 					// TODO: consertar exception que está sendo lançada aqui
-					memoryPart[i] = inputSplit.part;
+					memoryPartMap[i] = inputSplit.part;
 					actionQueue.add(new String("m " + inputSplit.part));
 				}
 				catch(Exception ex) {
@@ -320,7 +326,7 @@ public final class Encoder {
 				}
 			}
 			else {
-				memoryPart[i] = inputSplit.part;
+				memoryPartMap[i] = inputSplit.part;
 				actionQueue.add(new String("d " + inputSplit.part));
 			}
 			
