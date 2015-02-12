@@ -50,7 +50,7 @@ public final class Encoder {
 		}
 		
 		for(String s : inputSplitStringCollection) {
-			String[] inputSplitFieldsCollection = StringUtils.split(args[1], ',');
+			String[] inputSplitFieldsCollection = StringUtils.split(s, ',');
 			for(String ss : inputSplitStringCollection) {
 				System.out.println("    exploded , : " + ss);
 			}
