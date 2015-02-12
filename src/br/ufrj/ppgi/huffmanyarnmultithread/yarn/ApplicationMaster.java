@@ -194,9 +194,6 @@ public class ApplicationMaster {
 		
 		int i = 0;
 		for(BlockLocation blockLocation : blockLocationArray) {
-			ContainerRequest containerAsk = new ContainerRequest(capability, blockLocation.getHosts(), null, priority, false);
-			rmClient.addContainerRequest(containerAsk);
-
 			String hostName = blockLocation.getHosts()[0];
 			if(blockLocation.getOffset() == 0) {
 				this.masterContainerHostName = hostName;
@@ -217,11 +214,16 @@ public class ApplicationMaster {
 		
 		Iterator it = hostInputSplit.entrySet().iterator();
 		while(it.hasNext()) {
-			Map.Entry<String, ArrayList<String>> hashEntry = (Map.Entry<String, ArrayList<String>>) it.next(); 
-			System.out.println("Key: " + hashEntry.getKey());
-			for(String s : hashEntry.getValue()) {
-				System.out.println("     Value: " + s);	
-			}
+			Map.Entry<String, ArrayList<String>> hashEntry = (Map.Entry<String, ArrayList<String>>) it.next();
+			
+			String[] containerLocation = { hashEntry.getKey() };
+			ContainerRequest containerAsk = new ContainerRequest(capability, containerLocation, null, priority, false);
+			rmClient.addContainerRequest(containerAsk);
+			
+			//System.out.println("Key: " + hashEntry.getKey());
+			//for(String s : hashEntry.getValue()) {
+			//	System.out.println("     Value: " + s);	
+			//}
 		}
 		
 		numTotalContainers = hostInputSplit.size();
