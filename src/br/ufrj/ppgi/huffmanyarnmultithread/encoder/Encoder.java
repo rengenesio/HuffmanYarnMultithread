@@ -1,22 +1,16 @@
 package br.ufrj.ppgi.huffmanyarnmultithread.encoder;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Stack;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import br.ufrj.ppgi.huffmanyarnmultithread.InputSplit;
-import br.ufrj.ppgi.huffmanyarnmultithread.SerializationUtility;
 
 
 public final class Encoder {
@@ -30,13 +24,21 @@ public final class Encoder {
 	private int slavePort;
 	private HostPortPair[] hostPortPairArray;
 	
-	private byte[] memory;
-	private int[] frequencyArray;
-	private long[] totalFrequency;
+	// Array of byte arrays (each byte array represents a input split byte sequence) 
+	private byte[][] memory;	
+	// Associates a inputSplit with a index in memory matrix
+	private int[] memoryPart;
+	
+	private int[][] frequencyMatrix;
+	private long[] totalFrequencyArray;
 	private short symbols = 0;
 	private NodeArray nodeArray;
 	private Codification[] codificationArray;
 	
+	private int maxThreads = 8;
+	private int numTotalThreads = 1;
+	
+	private LinkedBlockingQueue<String> actionQueue = new LinkedBlockingQueue<String>();
 	
 	public Encoder(String[] args) {
 		this.conf = new Configuration();
@@ -54,7 +56,7 @@ public final class Encoder {
 		for(InputSplit inputSplit : this.inputSplitCollection) {
 			System.out.println(inputSplit.toString());
 		}
-				
+		
 		this.masterHostName = args[2];
 		this.numTotalContainers = Integer.parseInt(args[3]);
 		
@@ -64,10 +66,33 @@ public final class Encoder {
 	}
 	
 	public void encode() throws IOException, InterruptedException {
-//		System.out.println("Minha parte: " + inputOffset + " , " + inputLength);
+		int numInputSplits = this.inputSplitCollection.size();
+		if(numInputSplits >= this.maxThreads) {
+			this.numTotalThreads = this.maxThreads;
+		} else {
+			this.numTotalThreads = numInputSplits;
+		}
+
+		// Master and slave tasks
+		chunksToMemory();
+		
+		while(actionQueue.isEmpty() == false) {
+			System.out.println(actionQueue.take());			
+		}
+
+//		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
+//		for(int i = 0 ; i < numTotalThreads ; i++) {
+//			Thread t = new Thread(new Runnable() {
+//				
+//				@Override
+//				public void run() {
+//										
+//				}
+//			}
+//			
+//			t.start();
+//		}
 //		
-//		// Master and sleve tasks
-//		chunksToMemory();
 //		memoryToFrequency();
 //
 //		// Matrix do store each slave serialized frequency (only master instantiates)
@@ -263,20 +288,36 @@ public final class Encoder {
 //		memoryCompressor();
 	}
 
-//	private void chunksToMemory() throws IOException {
-//		FileSystem fs = FileSystem.get(conf);
-//		Path path = new Path(fileName);
-//		
-//		FSDataInputStream f = fs.open(path);
-//
-//		inputLength++;
-//		memory = new byte[inputLength];
-//		f.read(inputOffset, memory, 0, inputLength - 1);
-//		
-//		// Add EOF to file in memory
-//		memory[inputLength - 1] = 0;
-//	}
-//	
+	private void chunksToMemory() throws IOException {
+		FileSystem fs = FileSystem.get(conf);
+		Path path = new Path(fileName);
+		
+		FSDataInputStream f = fs.open(path);
+		
+		memory = new byte[this.inputSplitCollection.size()][];
+
+		int i = 0;
+		for(InputSplit inputSplit : this.inputSplitCollection) {
+			inputSplit.length++;
+			
+			try {
+				memory[i] = new byte[(int) inputSplit.length];
+				f.read(inputSplit.offset, memory[i], 0, inputSplit.length);
+				memory[i][inputSplit.length - 1] = 0;
+				
+				memoryPart[i] = inputSplit.part; 
+				
+				actionQueue.add(new String("m " + inputSplit.part));
+			}
+			catch(Exception ex) {
+				actionQueue.add(new String("d " + inputSplit.part));
+				return;
+			}
+			
+			i++;
+		}
+	}
+	
 //	public void memoryToFrequency() throws IOException {
 //		if(this.inputOffset == 0) {
 //			this.totalFrequency = new long[256];

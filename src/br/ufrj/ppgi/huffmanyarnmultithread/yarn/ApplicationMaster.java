@@ -201,7 +201,7 @@ public class ApplicationMaster {
 			if(!hostInputSplit.containsKey(hostName)) {
 				hostInputSplit.put(hostName, new ArrayList<String>());
 			}
-			InputSplit inputSplit = new InputSplit(i, blockLocation.getOffset(), blockLocation.getLength());
+			InputSplit inputSplit = new InputSplit(i, blockLocation.getOffset(), (int) blockLocation.getLength());
 			hostInputSplit.get(hostName).add(inputSplit.toString());
 			
 			for(String s : blockLocation.getHosts()) {
