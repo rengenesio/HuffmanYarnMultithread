@@ -15,4 +15,9 @@ public class InputSplit {
 		this.offset = offset;
 		this.length = length;
 	}
+
+	@Override
+	public String toString() {
+		return new String(this.part + "," + this.offset + "," + this.length); 
+	}
 }

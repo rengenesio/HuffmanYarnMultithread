@@ -38,14 +38,18 @@ public final class Encoder {
 	
 	
 	public Encoder(String[] args) {
-		this.conf = new Configuration();
+//		this.conf = new Configuration();
+//		
+//		this.fileName = args[0];
+//		this.inputPartId = Integer.parseInt(args[1]);
+//		this.inputOffset = Long.parseLong(args[2]);
+//		this.inputLength = Integer.parseInt(args[3]);
+//		this.masterHostName = args[4];
+//		this.numTotalContainers = Integer.parseInt(args[5]);
 		
-		this.fileName = args[0];
-		this.inputPartId = Integer.parseInt(args[1]);
-		this.inputOffset = Long.parseLong(args[2]);
-		this.inputLength = Integer.parseInt(args[3]);
-		this.masterHostName = args[4];
-		this.numTotalContainers = Integer.parseInt(args[5]);
+		for(String s : args) {
+			System.out.println(s);			
+		}
 	}
 	
 	public void encode() throws IOException, InterruptedException {

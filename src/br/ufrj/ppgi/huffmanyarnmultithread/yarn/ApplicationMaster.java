@@ -16,6 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -118,7 +119,7 @@ public class ApplicationMaster {
 	private ByteBuffer allTokens;
 
 	// Maps a host to a file input split (offset and length)
-	private HashMap<String, LinkedBlockingQueue<InputSplit>> hostInputSplit = new HashMap<String, LinkedBlockingQueue<InputSplit>>();
+	private HashMap<String, ArrayList<String>> hostInputSplit = new HashMap<String, ArrayList<String>>();
 	
 
 	public ApplicationMaster(String[] args) {
@@ -189,12 +190,8 @@ public class ApplicationMaster {
 		
 		FileStatus fileStatus = fileSystem.getFileStatus(path);
 		BlockLocation[] blockLocationArray = fileSystem.getFileBlockLocations(fileStatus, 0, fileStatus.getLen());
-		
 		LOG.info("# of blocks: " + blockLocationArray.length);
-		numTotalContainers = blockLocationArray.length;
-		LOG.info("numTotalContainers: " + numTotalContainers);
 		
-
 		int i = 0;
 		for(BlockLocation blockLocation : blockLocationArray) {
 			ContainerRequest containerAsk = new ContainerRequest(capability, blockLocation.getHosts(), null, priority, false);
@@ -205,9 +202,10 @@ public class ApplicationMaster {
 				this.masterContainerHostName = hostName;
 			}
 			if(!hostInputSplit.containsKey(hostName)) {
-				hostInputSplit.put(hostName, new LinkedBlockingQueue<InputSplit>());
+				hostInputSplit.put(hostName, new ArrayList<String>());
 			}
-			hostInputSplit.get(hostName).put(new InputSplit(i, blockLocation.getOffset(), blockLocation.getLength()));
+			InputSplit inputSplit = new InputSplit(i, blockLocation.getOffset(), blockLocation.getLength());
+			hostInputSplit.get(hostName).add(inputSplit.toString());
 			
 			for(String s : blockLocation.getHosts()) {
 				LOG.debug("HostLocation " + i + ": " + s + ", offset: " + blockLocation.getOffset() + ", length: " + blockLocation.getLength());
@@ -216,6 +214,9 @@ public class ApplicationMaster {
 			
 			i++;
 		}
+		
+		numTotalContainers = hostInputSplit.size();
+		LOG.info("numTotalContainers: " + numTotalContainers);
 
 		numRequestedContainers.set(numTotalContainers);
 	}
@@ -305,19 +306,11 @@ public class ApplicationMaster {
 			// File to be compressed
 			vargs.add(fileName);
 			
-			// Input split for container
-			InputSplit inputSplit = null;
-			try {
-				inputSplit = hostInputSplit.get(container.getNodeId().getHost()).take();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			// String collection with the splits for this node container
+			ArrayList<String> splitsForNode = hostInputSplit.get(container.getNodeId().getHost());
+
 			// Container Id (indicates the input split part)
-			vargs.add(Integer.toString(inputSplit.part));
-			// Total input file offset
-			vargs.add(Long.toString(inputSplit.offset));
-			// Input file length
-			vargs.add(Long.toString(inputSplit.length));
+			vargs.add(StringUtils.join(splitsForNode, ";"));
 			
 			// Master container hostname
 			vargs.add(masterContainerHostName);
