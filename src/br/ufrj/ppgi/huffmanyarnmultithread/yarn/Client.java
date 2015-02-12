@@ -97,7 +97,7 @@ public class Client {
 		
 		// Copy the application master jar to the filesystem. Create a local resource to point to the destination jar path
 		LOG.info("Copying AppMaster jar from local filesystem and add to local environment");
-		addToLocalResources(fs, "huffmanyarn.jar", "job.jar", appId.toString(), localResources, null);
+		addToLocalResources(fs, "huffmanyarnmultithread.jar", "job.jar", appId.toString(), localResources, null);
 		
 		// Set local resource info into app master container launch context
 		amContainer.setLocalResources(localResources);
