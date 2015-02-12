@@ -18,6 +18,6 @@ public class InputSplit {
 
 	@Override
 	public String toString() {
-		return new String(this.part + "," + this.offset + "," + this.length); 
+		return new String(this.part + "-" + this.offset + "-" + this.length); 
 	}
 }

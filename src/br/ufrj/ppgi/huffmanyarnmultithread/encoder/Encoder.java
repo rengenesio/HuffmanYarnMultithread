@@ -43,16 +43,16 @@ public final class Encoder {
 
 		this.fileName = args[0];
 				
-		String[] inputSplitStringCollection = StringUtils.split(args[1], '-');
+		String[] inputSplitStringCollection = StringUtils.split(args[1], ':');
 		
 		for(String s : inputSplitStringCollection) {
-			System.out.println("Exploded - : " + s);
+			System.out.println("Exploded ':' : " + s);
 		}
 		
 		for(String s : inputSplitStringCollection) {
-			String[] inputSplitFieldsCollection = StringUtils.split(s, ',');
+			String[] inputSplitFieldsCollection = StringUtils.split(s, '-');
 			for(String ss : inputSplitStringCollection) {
-				System.out.println("    exploded , : " + ss);
+				System.out.println("    exploded '-' : " + ss);
 			}
 			this.inputSplitCollection.add(new InputSplit(Integer.parseInt(inputSplitFieldsCollection[0]), Integer.parseInt(inputSplitFieldsCollection[1]), Integer.parseInt(inputSplitFieldsCollection[2])));
 		}
