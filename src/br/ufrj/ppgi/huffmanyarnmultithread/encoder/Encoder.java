@@ -420,11 +420,11 @@ public final class Encoder {
 //
 //        f.close();
 //	}
-//
-//	
-//	
-//	public static void main(String[] args) throws IOException, InterruptedException {
-//		Encoder encoder = new Encoder(args);
-//		encoder.encode();
-//	}
+
+	
+	
+	public static void main(String[] args) throws IOException, InterruptedException {
+		Encoder encoder = new Encoder(args);
+		encoder.encode();
+	}
 }
