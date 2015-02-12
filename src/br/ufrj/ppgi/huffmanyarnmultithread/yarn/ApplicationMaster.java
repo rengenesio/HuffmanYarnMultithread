@@ -321,7 +321,7 @@ public class ApplicationMaster {
 			ArrayList<String> splitsForNode = hostInputSplit.get(container.getNodeId().getHost());
 
 			// Container Id (indicates the input split part)
-			vargs.add(StringUtils.join(splitsForNode, ";"));
+			vargs.add(StringUtils.join(splitsForNode, "-"));
 			
 			// Master container hostname
 			vargs.add(masterContainerHostName);
