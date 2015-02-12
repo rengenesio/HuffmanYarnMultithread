@@ -45,6 +45,12 @@ public final class Encoder {
 				
 		String[] inputSplitStringCollection = StringUtils.split(args[1], ':');
 		
+		for(String s : inputSplitStringCollection) {
+			System.out.println("Exploded ':' : " + s);
+		}
+		
+		System.out.println("--------");
+		
 		for(String inputSplitString : inputSplitStringCollection) {
 			System.out.println("Exploded ':' : " + inputSplitString);
 			
@@ -52,7 +58,6 @@ public final class Encoder {
 			for(String ss : inputSplitFieldsCollection) {
 				System.out.println("    exploded '-' : " + ss);
 			}
-			
 			this.inputSplitCollection.add(new InputSplit(Integer.parseInt(inputSplitFieldsCollection[0]), Integer.parseInt(inputSplitFieldsCollection[1]), Integer.parseInt(inputSplitFieldsCollection[2])));
 		}
 
