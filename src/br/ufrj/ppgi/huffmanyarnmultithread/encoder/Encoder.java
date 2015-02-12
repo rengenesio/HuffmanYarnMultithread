@@ -311,6 +311,7 @@ public final class Encoder {
 			}
 			catch(Exception ex) {
 				actionQueue.add(new String("d " + inputSplit.part));
+				System.out.println(ex);
 				return;
 			}
 			
