@@ -215,6 +215,15 @@ public class ApplicationMaster {
 			i++;
 		}
 		
+		Iterator it = hostInputSplit.entrySet().iterator();
+		while(it.hasNext()) {
+			Map.Entry<String, ArrayList<String>> hashEntry = (Map.Entry<String, ArrayList<String>>) it.next(); 
+			System.out.println("Key: " + hashEntry.getKey());
+			for(String s : hashEntry.getValue()) {
+				System.out.println("     Value: " + s);	
+			}
+		}
+		
 		numTotalContainers = hostInputSplit.size();
 		LOG.info("numTotalContainers: " + numTotalContainers);
 
