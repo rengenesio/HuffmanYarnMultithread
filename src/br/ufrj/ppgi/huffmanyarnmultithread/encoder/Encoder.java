@@ -87,7 +87,14 @@ public final class Encoder {
 					memoryPart = i;
 				}
 			}
-			System.out.println((char)memory[memoryPart][0] + (char)memory[memoryPart][1] + (char)memory[memoryPart][2] + (char)memory[memoryPart][3]);
+			
+			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.append((char)memory[memoryPart][0]);
+			stringBuilder.append((char)memory[memoryPart][1]);
+			stringBuilder.append((char)memory[memoryPart][2]);
+			stringBuilder.append((char)memory[memoryPart][3]);
+			stringBuilder.append((char)memory[memoryPart][4]);
+			System.out.println(stringBuilder.toString());
 		}
 
 //		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
