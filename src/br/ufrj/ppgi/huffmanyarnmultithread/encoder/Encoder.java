@@ -87,7 +87,7 @@ public final class Encoder {
 					memoryPart = i;
 				}
 			}
-			System.out.println(memory[memoryPart][0] + memory[memoryPart][1] + memory[memoryPart][2] + memory[memoryPart][3]);
+			System.out.println((char)memory[memoryPart][0] + (char)memory[memoryPart][1] + (char)memory[memoryPart][2] + (char)memory[memoryPart][3]);
 		}
 
 //		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
