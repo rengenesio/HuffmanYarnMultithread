@@ -294,8 +294,9 @@ public final class Encoder {
 		
 		FSDataInputStream f = fs.open(path);
 		
-		System.out.println("inputSplitCollectionSize: " + this.inputSplitCollection.size());
-		memory = new byte[this.inputSplitCollection.size()][];
+		int numTotalInputSplits = this.inputSplitCollection.size();
+		memory = new byte[numTotalInputSplits][];
+		memoryPart = new int[numTotalInputSplits];
 
 		int i = 0;
 		for(InputSplit inputSplit : this.inputSplitCollection) {
