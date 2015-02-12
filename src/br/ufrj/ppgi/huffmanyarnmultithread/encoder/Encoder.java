@@ -294,6 +294,7 @@ public final class Encoder {
 		
 		FSDataInputStream f = fs.open(path);
 		
+		System.out.println("inputSplitCollectionSize: " + this.inputSplitCollection.size());
 		memory = new byte[this.inputSplitCollection.size()][];
 
 		int i = 0;
@@ -301,17 +302,25 @@ public final class Encoder {
 			inputSplit.length++;
 			
 			try {
+				System.out.println("entrou no loop");
 				memory[i] = new byte[(int) inputSplit.length];
+				System.out.println("alocou");
 				f.read(inputSplit.offset, memory[i], 0, inputSplit.length);
+				System.out.println("leu");
 				memory[i][inputSplit.length - 1] = 0;
+				System.out.println("botou EOF");
 				
-				memoryPart[i] = inputSplit.part; 
+				memoryPart[i] = inputSplit.part;
+				System.out.println("adicionou a parte");
 				
 				actionQueue.add(new String("m " + inputSplit.part));
+				System.out.println("e o gol!!");
 			}
 			catch(Exception ex) {
 				actionQueue.add(new String("d " + inputSplit.part));
-				System.out.println(ex);
+				System.out.println(ex.getMessage());
+				System.out.println("---------");
+				System.out.println(ex.toString());
 				return;
 			}
 			
