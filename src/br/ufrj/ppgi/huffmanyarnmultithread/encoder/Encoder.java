@@ -58,7 +58,8 @@ public final class Encoder {
 			for(String ss : inputSplitFieldsCollection) {
 				System.out.println("    exploded '-' : " + ss);
 			}
-			this.inputSplitCollection.add(new InputSplit(Integer.parseInt(inputSplitFieldsCollection[0]), Integer.parseInt(inputSplitFieldsCollection[1]), Integer.parseInt(inputSplitFieldsCollection[2])));
+			
+			this.inputSplitCollection.add(new InputSplit(Integer.parseInt(inputSplitFieldsCollection[0]), 10, 20));
 		}
 
 		for(InputSplit inputSplit : this.inputSplitCollection) {
