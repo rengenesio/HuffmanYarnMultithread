@@ -10,6 +10,6 @@ public class Defines {
 	public static final String amQueue = "default";
 	
 	
-	public static final int containerMemory = 512;
-	public static final int containerVCores = 1;
+	public static final int containerMemory = 8192;
+	public static final int containerVCores = 8;
 }
