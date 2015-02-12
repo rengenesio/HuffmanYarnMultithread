@@ -35,6 +35,8 @@ public final class Encoder {
 	private NodeArray nodeArray;
 	private Codification[] codificationArray;
 	
+	private int numTotalInputSplits = 0;
+	
 	private int maxThreads = 8;
 	private int numTotalThreads = 1;
 	
@@ -57,27 +59,29 @@ public final class Encoder {
 			System.out.println(inputSplit.toString());
 		}
 		
+		this.numTotalInputSplits = this.inputSplitCollection.size();
+		
 		this.masterHostName = args[2];
 		this.numTotalContainers = Integer.parseInt(args[3]);
-		
-		System.out.println(this.fileName);
-		System.out.println(this.masterHostName);
-		System.out.println(this.numTotalContainers);
 	}
 	
 	public void encode() throws IOException, InterruptedException {
-		int numInputSplits = this.inputSplitCollection.size();
-		if(numInputSplits >= this.maxThreads) {
+		if(this.numTotalInputSplits >= this.maxThreads) {
 			this.numTotalThreads = this.maxThreads;
 		} else {
-			this.numTotalThreads = numInputSplits;
+			this.numTotalThreads = this.numTotalInputSplits;
 		}
 
 		// Master and slave tasks
 		chunksToMemory();
 		
 		while(actionQueue.isEmpty() == false) {
-			System.out.println(actionQueue.take());			
+			String action = actionQueue.take();
+			System.out.print(action);
+			System.out.print("  ->  ");
+			
+			String[] s = StringUtils.split(action, ' ');
+			System.out.println(memory[Integer.parseInt(s[1])][0] + memory[Integer.parseInt(s[1])][1] + memory[Integer.parseInt(s[1])][2] + memory[Integer.parseInt(s[1])][3]);
 		}
 
 //		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
@@ -294,35 +298,30 @@ public final class Encoder {
 		
 		FSDataInputStream f = fs.open(path);
 		
-		int numTotalInputSplits = this.inputSplitCollection.size();
-		memory = new byte[numTotalInputSplits][];
-		memoryPart = new int[numTotalInputSplits];
+		memory = new byte[this.numTotalInputSplits][];
+		memoryPart = new int[this.numTotalInputSplits];
 
 		int i = 0;
+		boolean memoryFull = false;
 		for(InputSplit inputSplit : this.inputSplitCollection) {
 			inputSplit.length++;
 			
-			try {
-				System.out.println("entrou no loop");
-				memory[i] = new byte[(int) inputSplit.length];
-				System.out.println("alocou");
-				f.read(inputSplit.offset, memory[i], 0, inputSplit.length);
-				System.out.println("leu");
-				memory[i][inputSplit.length - 1] = 0;
-				System.out.println("botou EOF");
-				
-				memoryPart[i] = inputSplit.part;
-				System.out.println("adicionou a parte");
-				
-				actionQueue.add(new String("m " + inputSplit.part));
-				System.out.println("e o gol!!");
+			if(memoryFull == false) {
+				try {
+					memory[i] = new byte[(int) inputSplit.length];
+					f.read(inputSplit.offset, memory[i], 0, inputSplit.length);
+					memory[i][inputSplit.length - 1] = 0;
+					// TODO: consertar exception que está sendo lançada aqui
+					memoryPart[i] = inputSplit.part;
+					actionQueue.add(new String("m " + inputSplit.part));
+				}
+				catch(Exception ex) {
+					memoryFull = true;
+				}
 			}
-			catch(Exception ex) {
+			else {
+				memoryPart[i] = inputSplit.part;
 				actionQueue.add(new String("d " + inputSplit.part));
-				System.out.println(ex.getMessage());
-				System.out.println("---------");
-				System.out.println(ex.toString());
-				return;
 			}
 			
 			i++;
