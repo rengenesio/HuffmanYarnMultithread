@@ -300,7 +300,7 @@ public final class Encoder {
 						int readBytes = -1;
 						int totalReadBytes = 0;
 						while(totalReadBytes < inputSplit.length) {
-							readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, (totalReadBytes + 4096 > inputSplit.length ? inputSplit.length - totalReadBytes : 4096));
+							readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, (totalReadBytes + Defines.readBufferSize > inputSplit.length ? inputSplit.length - totalReadBytes : Defines.readBufferSize));
 							for(int j = 0 ; j < readBytes ; j++) {
 								frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
 							}
@@ -338,14 +338,14 @@ public final class Encoder {
 		// Main thread sums all thread frequencies
 		this.containerTotalFrequencyArray = new long[256];		
 		for(int i = 0 ; i < numTotalThreads ; i++) {
-			for(int j = 0 ; j < 256 ; j++) {
+			for(int j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
 				this.containerTotalFrequencyArray[j] += frequencyMatrix[i][j]; 
 			}
 		}
 		
 //
 		int containerTotalSymbols = 0;
-		for(int i = 0 ; i < 256 ; i++) {			
+		for(int i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {			
 			System.err.println(i + " -> " + this.containerTotalFrequencyArray[i]);
 			containerTotalSymbols += this.containerTotalFrequencyArray[i];
 		}

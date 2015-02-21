@@ -58,34 +58,34 @@ public class SerializationUtility {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
 		
-		for (int i = 0; i < frequencyArray.length; ++i) {
+		for (short i = 0; i < Defines.twoPowerBitsCodification ; ++i) {
 			dataOutputStream.writeLong(frequencyArray[i]);
 		}
-
+		
 		return byteArrayOutputStream.toByteArray();
 	}
 	
 	public static long[] deserializeFrequencyArray(byte[] byteArray) {
-		long[] frequencyArray = new long[256];
+		long[] frequencyArray = new long[Defines.twoPowerBitsCodification];
 		
 		//System.arraycopy(byteArray, 0, frequencyArray, 0, byteArray.length);
 		
 		int index = 0;
 		for(int i = 0 ; i < byteArray.length ; i += 8) {
 			frequencyArray[index] += (byteArray[i] & 0xFF);
-			frequencyArray[index] <<= 8;
+			frequencyArray[index] <<= 4;
 			frequencyArray[index] += (byteArray[i+1] & 0xFF);
-			frequencyArray[index] <<= 8;
+			frequencyArray[index] <<= 4;
 			frequencyArray[index] += (byteArray[i+2] & 0xFF);
-			frequencyArray[index] <<= 8;
+			frequencyArray[index] <<= 4;
 			frequencyArray[index] += (byteArray[i+3] & 0xFF);
-			frequencyArray[index] <<= 8;
+			frequencyArray[index] <<= 4;
 			frequencyArray[index] += (byteArray[i+4] & 0xFF);
-			frequencyArray[index] <<= 8;
+			frequencyArray[index] <<= 4;
 			frequencyArray[index] += (byteArray[i+5] & 0xFF);
-			frequencyArray[index] <<= 8;
+			frequencyArray[index] <<= 4;
 			frequencyArray[index] += (byteArray[i+6] & 0xFF);
-			frequencyArray[index] <<= 8;
+			frequencyArray[index] <<= 4;
 			frequencyArray[index] += (byteArray[i+7] & 0xFF);
 
 			index++;
