@@ -325,19 +325,22 @@ public final class Encoder {
 		memory = new byte[this.numTotalInputSplits][];
 		memoryPartMap = new int[this.numTotalInputSplits];
 
-		int i = 0;
 		boolean memoryFull = false;
-		for(InputSplit inputSplit : this.inputSplitCollection) {
-			inputSplit.length++;
+		int i = 0;
+		while(i < this.inputSplitCollection.size()) {
+			
+			// Adiciona mais 1 no tamanho do split pra poder adicionar na memória o marcador de fim do bloco da compressão (EOF)
+			inputSplitCollection.get(i).length++;
 			
 			if(memoryFull == false) {
 				try {
-					memory[i] = new byte[(int) inputSplit.length];
-					f.read(inputSplit.offset, memory[i], 0, inputSplit.length);
-					memory[i][inputSplit.length - 1] = 0;
+					memory[i] = new byte[(int) inputSplitCollection.get(i).length];
+					f.read(inputSplitCollection.get(i).offset, memory[i], 0, inputSplitCollection.get(i).length);
+					memory[i][inputSplitCollection.get(i).length - 1] = 0;
 					// TODO: consertar exception que está sendo lançada aqui
-					memoryPartMap[i] = inputSplit.part;
-					actionQueue.add(new String("m " + inputSplit.part));
+					memoryPartMap[i] = inputSplitCollection.get(i).part;
+					actionQueue.add(new String("m " + inputSplitCollection.get(i).part));
+					i++;
 				}
 				catch(Error error) {
 					System.out.println("Memoria encheu!!!!");
@@ -346,11 +349,10 @@ public final class Encoder {
 				}
 			}
 			else {
-				memoryPartMap[i] = inputSplit.part;
-				actionQueue.add(new String("d " + inputSplit.part));
+				memoryPartMap[i] = inputSplitCollection.get(i).part;
+				actionQueue.add(new String("d " + inputSplitCollection.get(i).part));
+				i++;
 			}
-			
-			i++;
 		}
 	}
 	
