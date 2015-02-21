@@ -87,7 +87,7 @@ public final class Encoder {
 		
 //
 		for(Map.Entry<Integer, Integer> keyValuePair : this.memoryPartMap.entrySet()) {
-			System.out.println("Chunk: " + keyValuePair.getKey() + "   Memory: " + keyValuePair.getValue());
+			System.err.println("Chunk: " + keyValuePair.getKey() + "   Memory: " + keyValuePair.getValue());
 		}
 		
 		
