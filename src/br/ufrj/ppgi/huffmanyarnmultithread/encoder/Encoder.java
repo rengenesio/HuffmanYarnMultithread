@@ -78,23 +78,23 @@ public final class Encoder {
 		while(actionQueue.isEmpty() == false) {
 			String action = actionQueue.take();
 			System.out.print(action);
-			System.out.print("  ->  ");
-			
-			String[] s = StringUtils.split(action, ' ');
-			int memoryPart = -1;
-			for(int i = 0 ; i < numTotalInputSplits ; i++) {
-				if(Integer.parseInt(s[1]) == this.memoryPartMap[i]) {
-					memoryPart = i;
-				}
-			}
-			
-			StringBuilder stringBuilder = new StringBuilder();
-			stringBuilder.append((char)memory[memoryPart][0]);
-			stringBuilder.append((char)memory[memoryPart][1]);
-			stringBuilder.append((char)memory[memoryPart][2]);
-			stringBuilder.append((char)memory[memoryPart][3]);
-			stringBuilder.append((char)memory[memoryPart][4]);
-			System.out.println(stringBuilder.toString());
+//			System.out.print("  ->  ");
+//			
+//			String[] s = StringUtils.split(action, ' ');
+//			int memoryPart = -1;
+//			for(int i = 0 ; i < numTotalInputSplits ; i++) {
+//				if(Integer.parseInt(s[1]) == this.memoryPartMap[i]) {
+//					memoryPart = i;
+//				}
+//			}
+//			
+//			StringBuilder stringBuilder = new StringBuilder();
+//			stringBuilder.append((char)memory[memoryPart][0]);
+//			stringBuilder.append((char)memory[memoryPart][1]);
+//			stringBuilder.append((char)memory[memoryPart][2]);
+//			stringBuilder.append((char)memory[memoryPart][3]);
+//			stringBuilder.append((char)memory[memoryPart][4]);
+//			System.out.println(stringBuilder.toString());
 		}
 		
 //		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
