@@ -222,8 +222,13 @@ public final class Encoder {
 						
 						
 						
-						int splitLength = inputSplitCollection.get(chunk).length;
-						for (int i = 0; i < splitLength ; i++) {
+						int i = 0;
+						while(inputSplitCollection.get(i).part != chunk) {
+							i++;
+						}
+						
+						int splitLength = inputSplitCollection.get(i).length;
+						for (int j = 0; j < splitLength ; j++) {
 							frequencyMatrix[this.threadId][(memory[memoryIndex][i] & 0xFF)]++;
 						}
 					}
