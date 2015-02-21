@@ -9,12 +9,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Stack;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -284,6 +286,10 @@ public final class Encoder {
 							frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
 						}
 					}
+					
+					// Add EOF to symbol count
+					frequencyMatrix[this.threadId][0]++;
+					
 				}
 			});
 			
@@ -300,7 +306,7 @@ public final class Encoder {
 		}
 		
 		// Main thread sums all thread frequencies.
-		this.containerTotalFrequencyArray = new long[256];		
+		this.containerTotalFrequencyArray = new long[Defines.twoPowerBitsCodification];		
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			for(int j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
 				this.containerTotalFrequencyArray[j] += frequencyMatrix[i][j]; 
@@ -374,9 +380,12 @@ public final class Encoder {
 
 //
 			System.out.println("Client enviou pro master:");
+			long totalSymbols = 0;
 			for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 				System.out.println(i + " -> " + containerTotalFrequencyArray[i]);
+				totalSymbols += containerTotalFrequencyArray[i];
 			}
+			System.out.println("Total symbols: " + totalSymbols);
 		}
 		
 		
@@ -525,12 +534,8 @@ public final class Encoder {
 		
 		memory = new byte[this.numTotalInputSplits][];
 
-		int i = 0;
 		boolean memoryFull = false;
-		while(i < this.inputSplitCollection.size()) {
-			// Adiciona mais 1 no tamanho do split pra poder adicionar na memória o marcador de fim do bloco da compressão (EOF)
-			inputSplitCollection.get(i).length++;
-			
+		for(int i = 0 ; i < this.inputSplitCollection.size() ; i++) {
 			if(memoryFull == false) {
 				try {
 					// Tenta alocar espaço na memória para este chunk. Se não conseguir, um erro será lançado e capturado
@@ -538,9 +543,6 @@ public final class Encoder {
 					
 					// Lê o chunk do disco para o bloco de memória que acabou de ser alocado
 					f.read(inputSplitCollection.get(i).offset, memory[i], 0, inputSplitCollection.get(i).length);
-					
-					// Adiciona o marcador de final de bloco na compressão
-					memory[i][inputSplitCollection.get(i).length - 1] = 0;
 					
 					// Mapeia o número do chunk lido para um índice do array da memória
 					memoryPartMap.put(inputSplitCollection.get(i).part, i);
@@ -560,121 +562,94 @@ public final class Encoder {
 				// Adiciona este chunk na lista de ações a serem feitas do disco
 				diskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 			}
-			
-			i++;
 		}
 	}
 	
 	
+	public void frequencyToNodeArray() {
+		this.nodeArray = new NodeArray((short) this.symbols);
+
+		for (short i = 0 ; i < 256 ; i++) {
+			if (this.totalFrequencyArray[i] > 0) {
+				this.nodeArray.insert(new Node((byte) i, this.totalFrequencyArray[i]));
+				System.out.print(i + " ");
+			}
+		}
+
+		/*
+		System.out.println(nodeArray.toString());
+		*/
+	}
+
+	public void huffmanEncode() {
+		while (this.nodeArray.size() > 1) {
+			Node a, b, c;
+			a = this.nodeArray.get(this.nodeArray.size() - 2);
+			b = this.nodeArray.get(this.nodeArray.size() - 1);
+			c = new Node((byte) 0, a.frequency + b.frequency, a, b);
+
+			this.nodeArray.removeLastTwoNodes();
+			this.nodeArray.insert(c);
+			
+			/*
+			System.out.println(nodeArray.toString() + "\n");
+			*/
+		}
+	}
+	
+	public void treeToCode() {
+		Stack<Node> s = new Stack<Node>();
+		codificationArray = new Codification[symbols];
+
+		Node n = nodeArray.get(0);
+		short codes = 0;
+		byte[] path = new byte[33];
 		
-//		if(this.inputOffset == 0) {
-//			this.totalFrequency = new long[256];
-//			for (int i = 0; i < inputLength; i++) {
-//				totalFrequency[(memory[i] & 0xFF)]++;
-//			}
-//		}
-//		else {
-//			this.frequencyArray = new int[256];
-//			for (int i = 0; i < inputLength; i++) {
-//				frequencyArray[(memory[i] & 0xFF)]++;
-//			}
-//		}
-//		
-//        /*
-//        System.out.println("FREQUENCY: symbol (frequency)");
-//        for (int i = 0; i < frequency.length; i++)
-//                if (frequency[i] != 0)
-//                        System.out.println((int) i + "(" + frequency[i] + ")");
-//        System.out.println("------------------------------");
-//        */
-//	}
-//	
-//	
-//	public void frequencyToNodeArray() {
-//		this.nodeArray = new NodeArray((short) this.symbols);
-//
-//		for (short i = 0 ; i < 256 ; i++) {
-//			if (this.totalFrequency[i] > 0) {
-//				this.nodeArray.insert(new Node((byte) i, this.totalFrequency[i]));
-//				System.out.print(i + " ");
-//			}
-//		}
-//
-//		/*
-//		System.out.println(nodeArray.toString());
-//		*/
-//	}
-//
-//	public void huffmanEncode() {
-//		while (this.nodeArray.size() > 1) {
-//			Node a, b, c;
-//			a = this.nodeArray.get(this.nodeArray.size() - 2);
-//			b = this.nodeArray.get(this.nodeArray.size() - 1);
-//			c = new Node((byte) 0, a.frequency + b.frequency, a, b);
-//
-//			this.nodeArray.removeLastTwoNodes();
-//			this.nodeArray.insert(c);
-//			
-//			/*
-//			System.out.println(nodeArray.toString() + "\n");
-//			*/
-//		}
-//	}
-//	
-//	public void treeToCode() {
-//		Stack<Node> s = new Stack<Node>();
-//		//codification = new Codification[symbols];
-//		codificationArray = new Codification[symbols];
-//		//codificationCollection = new CodificationArray();
-//		Node n = nodeArray.get(0);
-//		short codes = 0;
-//		byte[] path = new byte[33];
-//		
-//		byte size = 0;
-//		s.push(n);
-//		while (codes < symbols) {
-//			if (n.left != null) {
-//				if (!n.left.visited) {
-//					s.push(n);
-//					n.visited = true;
-//					n = n.left;
-//					path[size++] = 0;
-//				} else if (!n.right.visited) {
-//					s.push(n);
-//					n.visited = true;
-//					n = n.right;
-//					path[size++] = 1;
-//				} else {
-//					size--;
-//					n = s.pop();
-//				}
-//			} else {
-//				n.visited = true;
-//				codificationArray[codes] = new Codification(n.symbol, size, path);
-//				n = s.pop();
-//				size--;
-//				codes++;
-//			}
-//		}
-//
-//		/*
-//		System.out.println(symbols);
-//		System.out.println("CODIFICATION: symbol (size) code"); 
-//		for (short i = 0; i < codificationArray.length ; i++)
-//			System.out.println(codificationArray[i].toString());
-//		*/
-//	}
-//	
-//	public void codificationToHDFS() throws IOException {
-//		FileSystem fs = FileSystem.get(this.conf);
-//		Path path = new Path(fileName + ".dir/codification");
-//		FSDataOutputStream f = fs.create(path);
-//		
-//		byte[] codificationSerialized = SerializationUtility.serializeCodificationArray(this.codificationArray);
-//		f.write(codificationSerialized);
-//		f.close();
-//	}
-//	
+		byte size = 0;
+		s.push(n);
+		while (codes < symbols) {
+			if (n.left != null) {
+				if (!n.left.visited) {
+					s.push(n);
+					n.visited = true;
+					n = n.left;
+					path[size++] = 0;
+				} else if (!n.right.visited) {
+					s.push(n);
+					n.visited = true;
+					n = n.right;
+					path[size++] = 1;
+				} else {
+					size--;
+					n = s.pop();
+				}
+			} else {
+				n.visited = true;
+				codificationArray[codes] = new Codification(n.symbol, size, path);
+				n = s.pop();
+				size--;
+				codes++;
+			}
+		}
+
+		/*
+		System.out.println(symbols);
+		System.out.println("CODIFICATION: symbol (size) code"); 
+		for (short i = 0; i < codificationArray.length ; i++)
+			System.out.println(codificationArray[i].toString());
+		*/
+	}
+	
+	public void codificationToHDFS() throws IOException {
+		FileSystem fs = FileSystem.get(this.configuration);
+		Path path = new Path(fileName + ".dir/codification");
+		FSDataOutputStream f = fs.create(path);
+		
+		byte[] codificationSerialized = SerializationUtility.serializeCodificationArray(this.codificationArray);
+		f.write(codificationSerialized);
+		f.close();
+	}
+
 //    public void memoryCompressor() throws IOException {
 //    	FileSystem fs = FileSystem.get(this.conf);
 //		Path path = new Path(fileName + ".dir/compressed/part-" + String.format("%08d", this.inputPartId));
