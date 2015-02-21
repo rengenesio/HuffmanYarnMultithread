@@ -150,7 +150,9 @@ public final class Encoder {
 		
 		// Initializes the queues with  
 		this.symbolCountDiskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
+		this.encoderDiskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
 		this.symbolCountMemoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
+		this.encoderMemoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
 	}
 	
 	
