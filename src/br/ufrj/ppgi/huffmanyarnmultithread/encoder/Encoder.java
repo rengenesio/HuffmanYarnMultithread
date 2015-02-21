@@ -172,7 +172,7 @@ public final class Encoder {
 							if(chunk == null) { return; }
 						}
 						
-						System.out.println("Thread " + this.threadId + "   chunk: " + chunk);
+						System.err.println("Thread " + this.threadId + "   chunk: " + chunk);
 						
 						try {
 							Thread.sleep(1000);
