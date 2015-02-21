@@ -272,14 +272,7 @@ public final class Encoder {
 
 //
 						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplitToProcess.toString());
-												
-//						try {
-//							Thread.sleep(1000);
-//						} catch (InterruptedException e) {
-//							e.printStackTrace();
-//						}
-						
-						
+
 						try {
 							chunkToFrequency(inputSplitToProcess);
 						} catch (IOException e) {
@@ -302,7 +295,7 @@ public final class Encoder {
 						
 						FSDataInputStream f = fs.open(path);
 						
-						byte[] buffer = new byte[4096];
+						byte[] buffer = new byte[Defines.readBufferSize];
 						
 						int readBytes = -1;
 						int totalReadBytes = 0;
@@ -359,129 +352,129 @@ public final class Encoder {
 //		
 		System.out.println("CONTAINER TOTAL SYMBOLS: " + containerTotalSymbols);
 	
-//		// Matrix to store each slave serialized frequency (only master instantiates)
-//		byte[][] serializedSlaveFrequency = null;
+		// Matrix to store each slave serialized frequency (only master instantiates)
+		byte[][] serializedSlaveFrequency = null;
+
+		if(this.containerIsMaster) { // Master task (receive frequency data from all slaves)
+			// Instantiates matrix
+			serializedSlaveFrequency = new byte[numTotalContainers - 1][2048];
+			
+			// Stores informations about slaves, to connect to them to send codification data
+			this.containerPortPairArray = new HostPortPair[numTotalContainers - 1];
+			
+			// Instantiates a socket that listen for connections
+			ServerSocket serverSocket = new ServerSocket(9996, numTotalContainers);
+			
+			for(int i = 0 ; i < numTotalContainers -1 ; i++) {
+//				
+				System.out.println("Master aguardando client: " + i);
+				
+				// Blocked waiting for some slave connection
+				Socket clientSocket = serverSocket.accept();
+//				
+				System.out.println("Client conectou!");
+				
+				// When slave connected, instantiates stream to receive slave's frequency data
+			    DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
 //
-//		if(this.containerIsMaster) { // Master task (receive frequency data from all slaves)
-//			// Instantiates matrix
-//			serializedSlaveFrequency = new byte[numTotalContainers - 1][2048];
-//			
-//			// Stores informations about slaves, to connect to them to send codification data
-//			this.containerPortPairArray = new HostPortPair[numTotalContainers - 1];
-//			
-//			// Instantiates a socket that listen for connections
-//			ServerSocket serverSocket = new ServerSocket(9996, numTotalContainers);
-//			
-//			for(int i = 0 ; i < numTotalContainers -1 ; i++) {
-////				
-//				System.out.println("Master aguardando client: " + i);
-//				
-//				// Blocked waiting for some slave connection
-//				Socket clientSocket = serverSocket.accept();
-////				
-//				System.out.println("Client conectou!");
-//				
-//				// When slave connected, instantiates stream to receive slave's frequency data
-//			    DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
-////
-//			    System.out.println("Bytes que vou ler: " + 1024);
+			    System.out.println("Bytes que vou ler: " + 1024);
+			    
+			    // Reads serialized data from slave
+			    dataInputStream.readFully(serializedSlaveFrequency[i], 0, 1024);
 //			    
-//			    // Reads serialized data from slave
-//			    dataInputStream.readFully(serializedSlaveFrequency[i], 0, 1024);
-////			    
-//			    System.out.println("Li tudo!!");
+			    System.out.println("Li tudo!!");
+			    
+			    // Instantiates stream to send to slave a port where the slave will listen a connection to receive the codification data
+			    DataOutputStream dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
+			    dataOutputStream.writeInt(3020 + i);
+			    
+			    // Stores information about this slave and the port it received
+			    containerPortPairArray[i] = new HostPortPair(clientSocket.getInetAddress().getHostName(), 3020 + i);
+			    
+			    // Close socket with slave
+ 			    clientSocket.close();
 //			    
-//			    // Instantiates stream to send to slave a port where the slave will listen a connection to receive the codification data
-//			    DataOutputStream dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
-//			    dataOutputStream.writeInt(3020 + i);
-//			    
-//			    // Stores information about this slave and the port it received
-//			    containerPortPairArray[i] = new HostPortPair(clientSocket.getInetAddress().getHostName(), 3020 + i);
-//			    
-//			    // Close socket with slave
-// 			    clientSocket.close();
-////			    
-//			    System.out.println("Master recebeu do client: " + i);
-//			}
+			    System.out.println("Master recebeu do client: " + i);
+			}
+			
+			// Close ServerSocket after receive from all slaves
+			serverSocket.close();
+		}
+		else { // Slave task (send frequency to master)
 //			
-//			// Close ServerSocket after receive from all slaves
-//			serverSocket.close();
-//		}
-//		else { // Slave task (send frequency to master)
-////			
-//			System.out.println("Client tentando conectar com master");
-//	
-//			Socket socket;
-//			// Blocked until connect to master (sleep between tries)
-//			while(true) {
-//				try {
-//					socket = new Socket(this.masterContainerHostName, 9996);
-//					break;
-//				} catch(Exception e) {
-//					Thread.sleep(1000);
-//				}
-//			}
+			System.out.println("Client tentando conectar com master");
+	
+			Socket socket;
+			// Blocked until connect to master (sleep between tries)
+			while(true) {
+				try {
+					socket = new Socket(this.masterContainerHostName, 9996);
+					break;
+				} catch(Exception e) {
+					Thread.sleep(1000);
+				}
+			}
+			
+			// When connected to master, instantiates a stream to send frequency data
+			DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+			
+			// Serialized frequency data
+			byte[] serializedFrequencyArray = SerializationUtility.serializeFrequencyArray(this.containerTotalFrequencyArray);
+			
+			// Sends serialized frequency data
+			dataOutputStream.write(serializedFrequencyArray, 0, serializedFrequencyArray.length);
+			
+			// Instantiates a stream to receive a port number
+			DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+			this.slavePort = dataInputStream.readInt();
+			
 //			
-//			// When connected to master, instantiates a stream to send frequency data
-//			DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-//			
-//			// Serialized frequency data
-//			byte[] serializedFrequencyArray = SerializationUtility.serializeFrequencyArray(this.containerTotalFrequencyArray);
-//			
-//			// Sends serialized frequency data
-//			dataOutputStream.write(serializedFrequencyArray, 0, serializedFrequencyArray.length);
-//			
-//			// Instantiates a stream to receive a port number
-//			DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-//			this.slavePort = dataInputStream.readInt();
-//			
-////			
-//			System.out.println("Client enviou para o master");
-//			
-//			// Close socket
-//			socket.close();
-//		}
-//		
-//		
-//		// Sequential part (only master container)
-//		if(this.containerIsMaster) {
-//			// Sums slaves frequency data
-//			for(int i = 0 ; i < numTotalContainers - 1 ; i++) {
-//				// Deserialize client frequency data
-//				long[] slaveFrequencyArray = SerializationUtility.deserializeFrequencyArray(serializedSlaveFrequency[i]);
-//	
-//				// Sums
-//				for(short j = 0 ; j < 256 ; j++) {
-//					totalFrequencyArray[j] += slaveFrequencyArray[j];
-//				}
-//			}
-//			
-//			// Free slaves received data
-//			serializedSlaveFrequency = null;
-//			
-//			// Add EOF
-//		    totalFrequencyArray[0] = 1;
-//		    
-//		    // Count total symbols
-//		    this.symbols = 0;
-//		    long totalSymbols = 0;
-//		    for(short i = 0 ; i < 256 ; i++) {
-//		    	if(this.totalFrequencyArray[i] != 0) {
-//		    		this.symbols++;
-//		    		totalSymbols += this.totalFrequencyArray[i];
-//		    	}
-//		    }
-//		    
-//		    System.err.println("TOTAL FREQUENCY:");
-//		    for(short i = 0 ; i < 256 ; i++) {
-//		    	System.err.println(i + " ->  " + this.totalFrequencyArray[i]);
-//		    }
-//		    System.err.println("Total symbols: " + totalSymbols);
-//		    
-////		    this.frequencyToNodeArray();
-////			this.huffmanEncode();
-////			this.treeToCode();
-//		}
+			System.out.println("Client enviou para o master");
+			
+			// Close socket
+			socket.close();
+		}
+		
+		
+		// Sequential part (only master container)
+		if(this.containerIsMaster) {
+			// Sums slaves frequency data
+			for(int i = 0 ; i < numTotalContainers - 1 ; i++) {
+				// Deserialize client frequency data
+				long[] slaveFrequencyArray = SerializationUtility.deserializeFrequencyArray(serializedSlaveFrequency[i]);
+	
+				// Sums
+				for(short j = 0 ; j < 256 ; j++) {
+					totalFrequencyArray[j] += slaveFrequencyArray[j];
+				}
+			}
+			
+			// Free slaves received data
+			serializedSlaveFrequency = null;
+			
+			// Add EOF
+		    totalFrequencyArray[0] = 1;
+		    
+		    // Count total symbols
+		    this.symbols = 0;
+		    long totalSymbols = 0;
+		    for(short i = 0 ; i < 256 ; i++) {
+		    	if(this.totalFrequencyArray[i] != 0) {
+		    		this.symbols++;
+		    		totalSymbols += this.totalFrequencyArray[i];
+		    	}
+		    }
+		    
+		    System.err.println("TOTAL FREQUENCY:");
+		    for(short i = 0 ; i < 256 ; i++) {
+		    	System.err.println(i + " ->  " + this.totalFrequencyArray[i]);
+		    }
+		    System.err.println("Total symbols: " + totalSymbols);
+		    
+//		    this.frequencyToNodeArray();
+//			this.huffmanEncode();
+//			this.treeToCode();
+		}
 		
 		
 		

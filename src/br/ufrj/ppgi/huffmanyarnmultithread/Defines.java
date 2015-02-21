@@ -20,4 +20,7 @@ public class Defines {
 	// Huffman constants
 	public static final int bitsCodification = 8;
 	public static final int twoPowerBitsCodification = 256;
+	
+	
+	public static final int readBufferSize = 4096;
 }
