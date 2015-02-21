@@ -13,4 +13,11 @@ public class Defines {
 	//public static final int containerMemory = 4096;
 	public static final int containerMemory = 512;
 	public static final int containerVCores = 8;
+	
+	
+	
+	
+	// Huffman constants
+	public static final int bitsCodification = 8;
+	public static final int twoPowerBitsCodification = 256;
 }
