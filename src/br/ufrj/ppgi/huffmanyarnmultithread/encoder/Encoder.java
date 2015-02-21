@@ -264,8 +264,9 @@ public final class Encoder {
 							}
 							
 							totalReadBytes += readBytes;
-							System.err.println("TotalReadBytes: " + totalReadBytes);
 						}
+						
+						System.err.println("TotalReadBytes: " + totalReadBytes);
 					}
 					else {
 						// Esta parte está na memória
