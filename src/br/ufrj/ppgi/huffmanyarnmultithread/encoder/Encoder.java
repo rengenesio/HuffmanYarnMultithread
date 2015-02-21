@@ -832,7 +832,7 @@ public final class Encoder {
 	
 	public void codificationToHDFS() throws IOException {
 		FileSystem fs = FileSystem.get(this.configuration);
-		Path path = new Path(fileName + ".dir/codification");
+		Path path = new Path(fileName + ".yarnmultithreaddir/codification");
 		FSDataOutputStream f = fs.create(path);
 		
 		byte[] codificationSerialized = SerializationUtility.serializeCodificationArray(this.codificationArray);

@@ -20,34 +20,34 @@ public class Main {
 		in = new String(args[0]);
 		out = new String(in);
 		cb = new String(in);
-		out += ".dir/compressed/";
-		cb += ".dir/codification";
+		out += ".yarnmultithreaddir/compressed/";
+		cb += ".yarnmultithreaddir/codification";
 
-//		try {
-//			fs.delete(new Path(args[0] + ".dir"), true);
-//		} catch(Exception ex) { }
-//			
-//
-//		t1 = System.nanoTime();
-//		Client client = new Client(args);
-//		
-//		if (client.run()) {
-//			System.out.println("Compressão completa!");
-//		}
-//		else {
-//			System.out.println("Erro durante a compressão");
-//		}
-//		
-//		t2 = System.nanoTime();
-//		t = t2 - t1;
-//		System.out.println(t/1000000000.0 + " s (encoder)");
+		try {
+			fs.delete(new Path(args[0] + ".yarnmultithreaddir"), true);
+		} catch(Exception ex) { }
+			
+
+		t1 = System.nanoTime();
+		Client client = new Client(args);
+		
+		if (client.run()) {
+			System.out.println("Compressão completa!");
+		}
+		else {
+			System.out.println("Erro durante a compressão");
+		}
+		
+		t2 = System.nanoTime();
+		t = t2 - t1;
+		System.out.println(t/1000000000.0 + " s (encoder)");
 
 		in = new String(args[0]);
 		out = new String(in);
 		cb = new String(in);
 		in += ".yarnmultithreaddir/compressed/";
 		out += ".yarnmultithreaddir/decompressed";
-		cb += ".dir/codification";
+		cb += ".yarnmultithreaddir/codification";
 		
 		System.out.println(in);
 		System.out.println(out);
