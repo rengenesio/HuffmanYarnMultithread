@@ -413,10 +413,12 @@ public final class Encoder {
 		    
 		    // Count total symbols
 		    this.symbols = 0;
+//		    
 		    long totalSymbols = 0;
 		    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 		    	if(this.totalFrequencyArray[i] != 0) {
 		    		this.symbols++;
+//		    		
 		    		totalSymbols += this.totalFrequencyArray[i];
 		    	}
 		    }
@@ -426,6 +428,7 @@ public final class Encoder {
 		    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 		    	System.out.println(i + " ->  " + this.totalFrequencyArray[i]);
 		    }
+		    System.out.println("TOTAL SYMBOLS: " + totalSymbols);
 		    
 //		    this.frequencyToNodeArray();
 //			this.huffmanEncode();
