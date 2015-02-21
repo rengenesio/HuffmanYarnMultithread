@@ -598,7 +598,7 @@ public final class Encoder {
 					
 					// Output
 			    	FileSystem fsOutput = FileSystem.get(configuration);
-					Path pathOutput = new Path(fileName + ".dir/compressed/part-" + String.format("%08d", inputSplit.part));
+					Path pathOutput = new Path(fileName + ".yarnmultithreaddir/compressed/part-" + String.format("%08d", inputSplit.part));
 					FSDataOutputStream fOutput = fsOutput.create(pathOutput);
 					
 					BitSet bufferBitSet = null;
