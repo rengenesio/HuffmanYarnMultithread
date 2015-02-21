@@ -32,7 +32,6 @@ public final class Encoder {
 	private byte[][] memory;	
 	
 	// Associates a inputSplit with a index in memory matrix
-	//private int[] memoryPartMap;
 	private Map<Integer, Integer> memoryPartMap; 
 	
 	private int[][] frequencyMatrix;
@@ -95,6 +94,9 @@ public final class Encoder {
 			// Se o número ideal de threads for menor que o número máximo de threads, limito pelo número ideal
 			this.numTotalThreads = idealNumThreads;
 		}
+		
+		// Aloca o espaço onde cada thread vai contar os seus símbolos
+		frequencyMatrix = new int[this.numTotalThreads][256];
 		
 		System.out.println("Número de threads a ser disparadas: " + this.numTotalThreads);
 		
@@ -170,7 +172,7 @@ public final class Encoder {
 							if(chunk == null) { return; }
 						}
 						
-						System.out.println("Thread " + Thread.currentThread().getId() + "   chunk: " + chunk);
+						System.out.println("Thread " + this.threadId + "   chunk: " + chunk);
 						
 						try {
 							Thread.sleep(1000);
@@ -188,16 +190,17 @@ public final class Encoder {
 				}
 				
 				public void chunkToFrequency(int chunk) throws IOException {
-					if(memoryPartMap.get(chunk) == null) {
+					Integer memoryIndex = memoryPartMap.get(chunk);
+					if(memoryIndex == null) {
 						// Esta parte não está na memória, está no disco
 						System.out.println("Thread " + this.threadId + "   meu chunk está no disco");
 					}
 					else {
 						// Esta parte está na memória
-//						for (int i = 0; i < inputLength; i++) {
-//							frequencyArray[(memory[i] & 0xFF)]++;
-//						}
-						System.out.println("Thread " + this.threadId + "   meu chunk está na memória");
+						int splitLength = inputSplitCollection.get(chunk).length;
+						for (int i = 0; i < splitLength ; i++) {
+							frequencyMatrix[this.threadId][(memory[memoryIndex][i] & 0xFF)]++;
+						}
 					}
 				}
 			});
@@ -205,10 +208,21 @@ public final class Encoder {
 			threadCollection.add(thread);
 			thread.start();
 		}
-//		
+		
 		// Bloqueia até que todas as threads tenham terminado a contagem dos caracteres
 		for(Thread thread : threadCollection) {
 			thread.join();
+		}
+		
+		for(int i = 0 ; i < numTotalThreads ; i++) {
+			for(int j = 0 ; j < 256 ; j++) {
+				this.totalFrequencyArray[j] += frequencyMatrix[i][j]; 
+			}
+		}
+		
+		
+		for(int i = 0 ; i < 256 ; i++) {
+			System.out.println(i + " -> " + this.totalFrequencyArray[i]); 
 		}
 	
 //		
