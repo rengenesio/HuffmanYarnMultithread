@@ -64,7 +64,7 @@ public final class Encoder {
 		}
 
 		for(InputSplit inputSplit : this.inputSplitCollection) {
-			System.out.println(inputSplit.toString());
+			System.err.println(inputSplit.toString());
 		}
 		
 		this.numTotalInputSplits = this.inputSplitCollection.size();
@@ -98,7 +98,7 @@ public final class Encoder {
 		// Aloca o espaço onde cada thread vai contar os seus símbolos
 		frequencyMatrix = new int[this.numTotalThreads][256];
 		
-		System.out.println("Número de threads a ser disparadas: " + this.numTotalThreads);
+		System.err.println("Número de threads a ser disparadas: " + this.numTotalThreads);
 		
 		orderedThreadIdQueue = new ArrayBlockingQueue<Integer>(numTotalThreads);
 		for(int i = 0 ; i < numTotalThreads ; i++) {
@@ -229,7 +229,7 @@ public final class Encoder {
 		
 		
 		for(int i = 0 ; i < 256 ; i++) {
-			System.out.println(i + " -> " + this.totalFrequencyArray[i]); 
+			System.err.println(i + " -> " + this.totalFrequencyArray[i]); 
 		}
 	
 //		
