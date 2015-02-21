@@ -25,6 +25,7 @@ public final class Encoder {
 	
 	private String fileName;
 	private ArrayList<InputSplit> inputSplitCollection;
+	private boolean hostIsMaster = false;
 	private String masterHostName;
 	private int numTotalContainers;
 	private int slavePort;
@@ -36,7 +37,7 @@ public final class Encoder {
 	// Associates a inputSplit with a index in memory matrix
 	private Map<Integer, Integer> memoryPartMap; 
 	
-	private int[][] frequencyMatrix;
+	private long[][] frequencyMatrix;
 	private long[] totalFrequencyArray;
 	private short symbols = 0;
 	private NodeArray nodeArray;
@@ -62,7 +63,12 @@ public final class Encoder {
 		String[] inputSplitStringCollection = StringUtils.split(args[1], ':');
 		for(String inputSplitString : inputSplitStringCollection) {
 			String[] inputSplitFieldsCollection = StringUtils.split(inputSplitString, '-');
-			this.inputSplitCollection.add(new InputSplit(Integer.parseInt(inputSplitFieldsCollection[0]), Integer.parseInt(inputSplitFieldsCollection[1]), Integer.parseInt(inputSplitFieldsCollection[2])));
+			InputSplit inputSplit = new InputSplit(Integer.parseInt(inputSplitFieldsCollection[0]), Integer.parseInt(inputSplitFieldsCollection[1]), Integer.parseInt(inputSplitFieldsCollection[2]));
+			this.inputSplitCollection.add(inputSplit);
+			
+			if(inputSplit.part == 0) {
+				this.hostIsMaster = true;
+			}
 		}
 
 		for(InputSplit inputSplit : this.inputSplitCollection) {
@@ -90,6 +96,13 @@ public final class Encoder {
 			System.err.println("Chunk: " + keyValuePair.getKey() + "   Memory: " + keyValuePair.getValue());
 		}
 		
+		if(this.hostIsMaster) {
+			System.err.println("Host is master!!");
+		}
+		else {
+			System.err.println("Host is not master!!");
+		}
+		
 		
 		// Número ideal de threads (1 para disco (se tiver alguma parte em disco) + X para memória, onde X é o número de chunks na memória)
 		int idealNumThreads = this.memoryActionQueue.size() + (this.diskActionQueue.isEmpty() ? 0 : 1);
@@ -104,7 +117,7 @@ public final class Encoder {
 		}
 		
 		// Aloca o espaço onde cada thread vai contar os seus símbolos
-		frequencyMatrix = new int[this.numTotalThreads][256];
+		frequencyMatrix = new long[this.numTotalThreads][256];
 		
 		System.err.println("Número de threads a ser disparadas: " + this.numTotalThreads);
 		
@@ -256,13 +269,11 @@ public final class Encoder {
 			System.err.println(i + " -> " + this.totalFrequencyArray[i]); 
 		}
 	
-		/*		
-		memoryToFrequency();
-
-		// Matrix do store each slave serialized frequency (only master instantiates)
+		// Matrix to store each slave serialized frequency (only master instantiates)
 		byte[][] serializedSlaveFrequency = null;
 
-		// Communication between slaves and master
+
+
 		if(this.inputOffset == 0) { // Master task (receive frequency data from all slaves)
 			// Instantiates matrix
 			serializedSlaveFrequency = new byte[numTotalContainers - 1][1024];
