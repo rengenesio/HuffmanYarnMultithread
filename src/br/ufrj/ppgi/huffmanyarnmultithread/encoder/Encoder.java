@@ -66,7 +66,7 @@ public final class Encoder {
 		}
 
 		for(InputSplit inputSplit : this.inputSplitCollection) {
-			System.err.println(inputSplit.toString());
+			System.err.println("InputSplit: " + inputSplit.toString());
 		}
 		
 		this.numTotalInputSplits = this.inputSplitCollection.size();
