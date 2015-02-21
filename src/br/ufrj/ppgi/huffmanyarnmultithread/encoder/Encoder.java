@@ -193,10 +193,17 @@ public final class Encoder {
 					Integer memoryIndex = memoryPartMap.get(chunk);
 					if(memoryIndex == null) {
 						// Esta parte não está na memória, está no disco
-						System.out.println("Thread " + this.threadId + "   meu chunk está no disco");
+						System.err.println("Thread " + this.threadId + "   chunk: " + chunk + " (meu chunk está no disco)");
+						
+						
+						
 					}
 					else {
 						// Esta parte está na memória
+						System.err.println("Thread " + this.threadId + "   chunk: " + chunk + " (meu chunk está no disco)");
+						
+						
+						
 						int splitLength = inputSplitCollection.get(chunk).length;
 						for (int i = 0; i < splitLength ; i++) {
 							frequencyMatrix[this.threadId][(memory[memoryIndex][i] & 0xFF)]++;
