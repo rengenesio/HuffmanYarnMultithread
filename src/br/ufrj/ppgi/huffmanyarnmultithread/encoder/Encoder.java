@@ -764,7 +764,6 @@ public final class Encoder {
 		for (short i = 0 ; i < 256 ; i++) {
 			if (this.totalFrequencyArray[i] > 0) {
 				this.nodeArray.insert(new Node((byte) i, this.totalFrequencyArray[i]));
-				System.out.print(i + " ");
 			}
 		}
 
