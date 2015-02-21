@@ -125,7 +125,7 @@ public final class Encoder {
 			String[] inputSplitFieldsCollection = StringUtils.split(inputSplitString, '-');
 			
 			// Instantiates a new input split
-			InputSplit inputSplit = new InputSplit(Integer.parseInt(inputSplitFieldsCollection[0]), Integer.parseInt(inputSplitFieldsCollection[1]), Integer.parseInt(inputSplitFieldsCollection[2]));
+			InputSplit inputSplit = new InputSplit(Integer.parseInt(inputSplitFieldsCollection[0]), Long.parseLong(inputSplitFieldsCollection[1]), Integer.parseInt(inputSplitFieldsCollection[2]));
 			
 			// Add this input split to input split collection
 			this.inputSplitCollection.add(inputSplit);
