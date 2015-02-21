@@ -123,7 +123,7 @@ public final class Encoder {
 						}
 	
 						// Pega o próximo elemento da fila (retorna nulo caso a fila esteja vazia)
-						Integer isFirst = memoryActionQueue.poll();
+						Integer isFirst = firstThreadQueue.poll();
 	
 						// Fim da região de exclusão mútua
 						firstQueueSemaphore.release();
