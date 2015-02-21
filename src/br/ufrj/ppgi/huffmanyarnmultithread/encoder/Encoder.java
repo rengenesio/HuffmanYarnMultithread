@@ -256,10 +256,13 @@ public final class Encoder {
 						byte[] buffer = new byte[4096];
 						
 						int readBytes = -1;
-						while((readBytes = f.read(inputSplit.offset, buffer, 0, 4096)) != -1) {
+						int totalReadBytes = 0;
+						while((readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, 4096)) != -1) {
 							for(int j = 0 ; j < readBytes ; j++) {
 								frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
 							}
+							
+							totalReadBytes += readBytes;
 						}
 					}
 					else {
