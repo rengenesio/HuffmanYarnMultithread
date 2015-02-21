@@ -176,6 +176,22 @@ public final class Encoder {
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
+						
+						chunkToFrequency(chunk);
+					}
+				}
+				
+				public void chunkToFrequency(int chunk) throws IOException {
+					if(memoryPartMap.get(chunk) == null) {
+						// Esta parte não está na memória, está no disco
+						System.out.println("Thread " + Thread.currentThread().getId() + "   meu chunk está no disco");
+					}
+					else {
+						// Esta parte está na memória
+//						for (int i = 0; i < inputLength; i++) {
+//							frequencyArray[(memory[i] & 0xFF)]++;
+//						}
+						System.out.println("Thread " + Thread.currentThread().getId() + "   meu chunk está na memória");
 					}
 				}
 			});
@@ -383,7 +399,7 @@ public final class Encoder {
 //
 //		// Master and slaves task
 //		memoryCompressor();
-	}
+//	}
 
 	private void chunksToMemory() throws IOException {
 		FileSystem fs = FileSystem.get(conf);
@@ -436,19 +452,8 @@ public final class Encoder {
 		}
 	}
 	
-//	public void chunkToFrequency(int threadId, int chunk) throws IOException {
-//		
-//		
-//		if(this.memoryPartMap.get(chunk) == null) {
-//			// Esta parte não está na memória, está no disco
-//		}
-//		else {
-//			// Esta parte está na memória
-//			for (int i = 0; i < inputLength; i++) {
-//				frequencyArray[(memory[i] & 0xFF)]++;
-//			}
-//		}
-//		
+	
+		
 //		if(this.inputOffset == 0) {
 //			this.totalFrequency = new long[256];
 //			for (int i = 0; i < inputLength; i++) {
@@ -461,15 +466,15 @@ public final class Encoder {
 //				frequencyArray[(memory[i] & 0xFF)]++;
 //			}
 //		}
-//		
-//        /*
-//        System.out.println("FREQUENCY: symbol (frequency)");
-//        for (int i = 0; i < frequency.length; i++)
-//                if (frequency[i] != 0)
-//                        System.out.println((int) i + "(" + frequency[i] + ")");
-//        System.out.println("------------------------------");
-//        */
-//	}
+		
+        /*
+        System.out.println("FREQUENCY: symbol (frequency)");
+        for (int i = 0; i < frequency.length; i++)
+                if (frequency[i] != 0)
+                        System.out.println((int) i + "(" + frequency[i] + ")");
+        System.out.println("------------------------------");
+        */
+	}
 //	
 //	
 //	public void frequencyToNodeArray() {
