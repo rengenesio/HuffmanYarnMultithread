@@ -257,16 +257,20 @@ public final class Encoder {
 						
 						int readBytes = -1;
 						int totalReadBytes = 0;
-						// TODO: corrigir o quanto deve ser lido. Tenho que ler só até o final da minha parte do arquivo, se eu ler de 4096 em 4096, estarei lendo até o final do arquivo
-						while((readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, -------------------)) != -1) {
+						while(totalReadBytes < inputSplit.length) {
+							readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, (totalReadBytes + 4096 > inputSplit.length ? inputSplit.length - totalReadBytes : 4096));
 							for(int j = 0 ; j < readBytes ; j++) {
 								frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
 							}
 							
 							totalReadBytes += readBytes;
+							
+							if(totalReadBytes + 100000 > inputSplit.length) {
+								System.err.println("TotalReadBytes: " + totalReadBytes);
+							}
 						}
 						
-						System.err.println("TotalReadBytes: " + totalReadBytes);
+						System.err.println("Final TotalReadBytes: " + totalReadBytes);
 					}
 					else {
 						// Esta parte está na memória
