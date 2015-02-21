@@ -382,6 +382,8 @@ public final class Encoder {
 				// Adiciona este chunk na lista de ações a serem feitas do disco
 				diskActionQueue.add(inputSplitCollection.get(i).part);
 			}
+			
+			i++;
 		}
 	}
 	
