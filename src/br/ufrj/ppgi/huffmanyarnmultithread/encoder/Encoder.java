@@ -3,6 +3,7 @@ package br.ufrj.ppgi.huffmanyarnmultithread.encoder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -72,7 +73,6 @@ public final class Encoder {
 			this.numTotalThreads = this.numTotalInputSplits;
 		}
 
-		// Master and slave tasks
 		chunksToMemory();
 		
 		while(actionQueue.isEmpty() == false) {
@@ -96,14 +96,25 @@ public final class Encoder {
 			stringBuilder.append((char)memory[memoryPart][4]);
 			System.out.println(stringBuilder.toString());
 		}
-
+		
 //		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
 //		for(int i = 0 ; i < numTotalThreads ; i++) {
 //			Thread t = new Thread(new Runnable() {
 //				
 //				@Override
 //				public void run() {
-//										
+//					Semaphore actionQueueSemaphore = new Semaphore(1);
+//					
+//					while(true) {
+//						actionQueueSemaphore.acquire();
+//						if(actionQueue.isEmpty() == false) { return; }
+//						String action = actionQueue.take();
+//						actionQueueSemaphore.release();
+//
+//						if(action.startsWith(prefix))
+//						
+//						
+//					}
 //				}
 //			}
 //			
@@ -341,7 +352,8 @@ public final class Encoder {
 		}
 	}
 	
-//	public void memoryToFrequency() throws IOException {
+//	public void memoryToFrequency(int chunk) throws IOException {
+//		
 //		if(this.inputOffset == 0) {
 //			this.totalFrequency = new long[256];
 //			for (int i = 0; i < inputLength; i++) {
@@ -363,6 +375,7 @@ public final class Encoder {
 //        System.out.println("------------------------------");
 //        */
 //	}
+	
 //	
 //	public void frequencyToNodeArray() {
 //		this.nodeArray = new NodeArray((short) this.symbols);
