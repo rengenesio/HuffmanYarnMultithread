@@ -229,7 +229,7 @@ public final class Encoder {
 						
 						int splitLength = inputSplitCollection.get(i).length;
 						for (int j = 0; j < splitLength ; j++) {
-							frequencyMatrix[this.threadId][(memory[memoryIndex][i] & 0xFF)]++;
+							frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
 						}
 					}
 				}
