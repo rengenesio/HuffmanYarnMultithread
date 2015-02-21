@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 import org.apache.commons.lang.StringUtils;
@@ -45,8 +46,8 @@ public final class Encoder {
 	private int maxThreads = 8;
 	private int numTotalThreads = 1;
 	
-	private LinkedBlockingQueue<Integer> diskActionQueue = new LinkedBlockingQueue<Integer>();
-	private LinkedBlockingQueue<Integer> memoryActionQueue = new LinkedBlockingQueue<Integer>();
+	private Queue<Integer> diskActionQueue;
+	private Queue<Integer> memoryActionQueue;
 	
 	public Encoder(String[] args) {
 		this.conf = new Configuration();
@@ -71,74 +72,97 @@ public final class Encoder {
 		
 		this.masterHostName = args[2];
 		this.numTotalContainers = Integer.parseInt(args[3]);
+		
+		this.diskActionQueue = new ArrayBlockingQueue<Integer>(this.numTotalInputSplits);
+		this.memoryActionQueue = new ArrayBlockingQueue<Integer>(this.numTotalInputSplits);
 	}
 	
 	
 	public void encode() throws IOException, InterruptedException {
-		if(this.numTotalInputSplits >= this.maxThreads) {
-			this.numTotalThreads = this.maxThreads;
-		} else {
-			this.numTotalThreads = this.numTotalInputSplits;
-		}
-
 		chunksToMemory();
 		
-		System.out.println("Memória:");
-		while(memoryActionQueue.isEmpty() == false) {
-			int chunk = memoryActionQueue.take();
-			System.out.println(chunk);
+		// Número ideal de threads (1 para disco (se tiver alguma parte em disco) + X para memória, onde X é o número de chunks na memória)
+		int idealNumThreads = this.memoryActionQueue.size() + (this.diskActionQueue.isEmpty() ? 0 : 1);
+
+
+		if(idealNumThreads > this.maxThreads) {
+			// Se o número ideal de threads for maior que o número máximo de threads, limito pelo número máximo de threads 
+			this.numTotalThreads = this.maxThreads;
+		}
+		else {
+			// Se o número ideal de threads for menor que o número máximo de threads, limito pelo número ideal
+			this.numTotalThreads = idealNumThreads;
 		}
 		
-		System.out.println("\nDisco:");
-		while(diskActionQueue.isEmpty() == false) {
-			int chunk = diskActionQueue.take();
-			System.out.println(chunk);
-		}
+		System.out.println("Número de threads a ser disparadas: " + this.numTotalThreads);
 		
-//		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
-//		for(int i = 0 ; i < numTotalThreads ; i++) {
-//			Thread thread = new Thread(new Runnable() {
-//				
-//				@Override
-//				public void run() {
-//					Semaphore actionQueueSemaphore = new Semaphore(1);
-//					
-//					while(true) {
-//						try {
-//							actionQueueSemaphore.acquire();
-//						} catch (InterruptedException e) {
-//							e.printStackTrace();
-//						}
-//
-//						String action = null;
-//						do {
-//							try {
-//								action = actionQueue.take();
-//							} catch (InterruptedException e) {
-//								e.printStackTrace();
-//							}
-//							
-//						}while(action)
-//						
-//						
-//						
-//						actionQueueSemaphore.release();
-//
-//						//Thread.currentThread().getId();
-//						
-//						
-//					}
-//				}
-//			});
-//			
-//			threadCollection.add(thread);
-//			thread.start();
-//		}
+		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
+		for(int i = 0 ; i < numTotalThreads ; i++) {
+			Thread thread = new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					Semaphore actionQueueSemaphore = new Semaphore(1);
+					
+					// Indica se esta thread é a responsável por fazer a contagem das partes em disco
+					boolean diskThread = false;
+					
+					// A thread será responsável por fazer a contagem das partes do arquivo que estão em disco se ela for a primeira e tiver alguma parte em disco
+					if(Thread.currentThread().getId() == 0 && diskActionQueue.isEmpty() == false) {
+						diskThread = true;
+					}
+					
+					while(true) {
+						Integer chunk = null;
+						
+						if(diskThread == false) {
+							// Thread que entrar aqui vai pegar as partes da memória
+							
+							// Semáforo de exclusão mútua para que duas threads não acessem a fila ao mesmo tempo
+							try {
+								actionQueueSemaphore.acquire();
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+
+							// Pega o próximo elemento da fila (retorna nulo caso a fila esteja vazia)
+							chunk = memoryActionQueue.poll();
+
+							// Fim da região de exclusão mútua
+							actionQueueSemaphore.release();
+							
+							// Encerra se a fila estiver vazia
+							if(chunk == null) { return; }
+						}
+						else {
+							// Thread que entrar aqui vai pegar as partes do disco (não precisa de exclusão mútua pois apenas uma thread é responsável pelos chunks que não foram carregados em memória)
+							
+							// Pega o próximo elemento da fila (retorna nulo caso a fila esteja vazia)
+							chunk = diskActionQueue.poll();
+							
+							// Encerra se a fila estiver vazia
+							if(chunk == null) { return; }
+						}
+						
+						System.out.println("Thread " + Thread.currentThread().getId() + "   chunk: " + chunk);
+						
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			});
+			
+			threadCollection.add(thread);
+			thread.start();
+		}
 //		
-//		// Bloqueia até que todas as threads tenham terminado a contagem dos caracteres
-//		for(Thread thread : threadCollection) {
-//			thread.join();
-//		}
+		// Bloqueia até que todas as threads tenham terminado a contagem dos caracteres
+		for(Thread thread : threadCollection) {
+			thread.join();
+		}
 	
 //		
 //		memoryToFrequency();
