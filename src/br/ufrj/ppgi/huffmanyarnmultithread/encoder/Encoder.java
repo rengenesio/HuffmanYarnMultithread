@@ -438,13 +438,16 @@ public final class Encoder {
 		
 		// Sequential part (only master container)
 		if(this.containerIsMaster) {
+			// Instantiates a total frequency array
+			totalFrequencyArray = new long[Defines.twoPowerBitsCodification];
+			
 			// Sums slaves frequency data
 			for(int i = 0 ; i < numTotalContainers - 1 ; i++) {
 				// Deserialize client frequency data
 				long[] slaveFrequencyArray = SerializationUtility.deserializeFrequencyArray(serializedSlaveFrequency[i]);
 	
 				// Sums
-				for(short j = 0 ; j < 256 ; j++) {
+				for(short j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
 					totalFrequencyArray[j] += slaveFrequencyArray[j];
 				}
 			}
@@ -458,15 +461,16 @@ public final class Encoder {
 		    // Count total symbols
 		    this.symbols = 0;
 		    long totalSymbols = 0;
-		    for(short i = 0 ; i < 256 ; i++) {
+		    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 		    	if(this.totalFrequencyArray[i] != 0) {
 		    		this.symbols++;
 		    		totalSymbols += this.totalFrequencyArray[i];
 		    	}
 		    }
-		    
+
+//		    
 		    System.err.println("TOTAL FREQUENCY:");
-		    for(short i = 0 ; i < 256 ; i++) {
+		    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 		    	System.err.println(i + " ->  " + this.totalFrequencyArray[i]);
 		    }
 		    System.err.println("Total symbols: " + totalSymbols);
