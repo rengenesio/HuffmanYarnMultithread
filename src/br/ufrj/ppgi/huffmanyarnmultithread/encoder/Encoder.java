@@ -182,6 +182,7 @@ public final class Encoder {
 		frequencyMatrix = new long[this.numTotalThreads][Defines.twoPowerBitsCodification];
 		
 		// Enqueue thread id's
+		orderedThreadIdQueue = new ArrayBlockingQueue<Integer>(this.numTotalThreads);
 		for(int i = 0 ; i < this.numTotalThreads ; i++) {
 			orderedThreadIdQueue.add(i);
 		}
