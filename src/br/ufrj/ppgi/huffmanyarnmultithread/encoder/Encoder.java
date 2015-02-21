@@ -314,7 +314,7 @@ public final class Encoder {
 					else {
 						// Split is in memory
 //						
-						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplit.toString() + " (meu chunk está no disco)");
+						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplit.toString() + " (meu chunk está na memória)");
 						
 						for (int j = 0; j < inputSplit.length ; j++) {
 							frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
@@ -367,22 +367,22 @@ public final class Encoder {
 			
 			for(int i = 0 ; i < numTotalContainers -1 ; i++) {
 //				
-				System.out.println("Master aguardando client: " + i);
+				//System.out.println("Master aguardando client: " + i);
 				
 				// Blocked waiting for some slave connection
 				Socket clientSocket = serverSocket.accept();
 //				
-				System.out.println("Client conectou!");
+				//System.out.println("Client conectou!");
 				
 				// When slave connected, instantiates stream to receive slave's frequency data
 			    DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
 //
-			    System.out.println("Bytes que vou ler: " + 2048);
+			    //System.out.println("Bytes que vou ler: " + 2048);
 			    
 			    // Reads serialized data from slave
 			    dataInputStream.readFully(serializedSlaveFrequency[i], 0, 2048);
 //			    
-			    System.out.println("Li tudo!!");
+			    //System.out.println("Li tudo!!");
 			    
 			    // Instantiates stream to send to slave a port where the slave will listen a connection to receive the codification data
 			    DataOutputStream dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
@@ -394,7 +394,7 @@ public final class Encoder {
 			    // Close socket with slave
  			    clientSocket.close();
 //			    
-			    System.out.println("Master recebeu do client: " + i);
+			    //System.out.println("Master recebeu do client: " + i);
 			}
 			
 			// Close ServerSocket after receive from all slaves
@@ -402,7 +402,7 @@ public final class Encoder {
 		}
 		else { // Slave task (send frequency to master)
 //			
-			System.out.println("Client tentando conectar com master");
+			//System.out.println("Client tentando conectar com master");
 	
 			Socket socket;
 			// Blocked until connect to master (sleep between tries)
@@ -429,10 +429,14 @@ public final class Encoder {
 			this.slavePort = dataInputStream.readInt();
 			
 //			
-			System.out.println("Client enviou para o master");
+			//System.out.println("Client enviou para o master");
 			
 			// Close socket
 			socket.close();
+			
+			for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
+				System.out.println(i + " -> " + containerTotalFrequencyArray[i]);
+			}
 		}
 		
 		
@@ -448,8 +452,10 @@ public final class Encoder {
 	
 				// Sums
 				for(short j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
+					System.out.println(i + " -> " + containerTotalFrequencyArray[j]);
 					totalFrequencyArray[j] += slaveFrequencyArray[j];
 				}
+				System.out.println("------------------------");
 			}
 			
 			// Free slaves received data
@@ -469,11 +475,10 @@ public final class Encoder {
 		    }
 
 //		    
-		    System.err.println("TOTAL FREQUENCY:");
+		    System.out.println("TOTAL FREQUENCY:");
 		    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
-		    	System.err.println(i + " ->  " + this.totalFrequencyArray[i]);
+		    	System.out.println(i + " ->  " + this.totalFrequencyArray[i]);
 		    }
-		    System.err.println("Total symbols: " + totalSymbols);
 		    
 //		    this.frequencyToNodeArray();
 //			this.huffmanEncode();
