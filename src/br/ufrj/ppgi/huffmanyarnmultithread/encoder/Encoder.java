@@ -8,6 +8,8 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -81,6 +83,13 @@ public final class Encoder {
 	
 	public void encode() throws IOException, InterruptedException {
 		chunksToMemory();
+		
+		
+//
+		for(Map.Entry<Integer, Integer> keyValuePair : this.memoryPartMap.entrySet()) {
+			System.out.println("Chunk: " + keyValuePair.getKey() + "   Memory: " + keyValuePair.getValue());
+		}
+		
 		
 		// Número ideal de threads (1 para disco (se tiver alguma parte em disco) + X para memória, onde X é o número de chunks na memória)
 		int idealNumThreads = this.memoryActionQueue.size() + (this.diskActionQueue.isEmpty() ? 0 : 1);
@@ -471,7 +480,6 @@ public final class Encoder {
 					
 					// Adiciona este chunk na lista de ações a serem feitas da memória
 					memoryActionQueue.add(inputSplitCollection.get(i).part);
-					
 				}
 				catch(Error error) {
 					// Adiciona este chunk na lista de ações a serem feitas do disco
