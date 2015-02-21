@@ -177,7 +177,12 @@ public final class Encoder {
 							e.printStackTrace();
 						}
 						
-						chunkToFrequency(chunk);
+						
+						try {
+							chunkToFrequency(chunk);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 				
@@ -399,7 +404,7 @@ public final class Encoder {
 //
 //		// Master and slaves task
 //		memoryCompressor();
-//	}
+	}
 
 	private void chunksToMemory() throws IOException {
 		FileSystem fs = FileSystem.get(conf);
@@ -466,15 +471,15 @@ public final class Encoder {
 //				frequencyArray[(memory[i] & 0xFF)]++;
 //			}
 //		}
-		
-        /*
-        System.out.println("FREQUENCY: symbol (frequency)");
-        for (int i = 0; i < frequency.length; i++)
-                if (frequency[i] != 0)
-                        System.out.println((int) i + "(" + frequency[i] + ")");
-        System.out.println("------------------------------");
-        */
-	}
+//		
+//        /*
+//        System.out.println("FREQUENCY: symbol (frequency)");
+//        for (int i = 0; i < frequency.length; i++)
+//                if (frequency[i] != 0)
+//                        System.out.println((int) i + "(" + frequency[i] + ")");
+//        System.out.println("------------------------------");
+//        */
+//	}
 //	
 //	
 //	public void frequencyToNodeArray() {
