@@ -452,7 +452,7 @@ public final class Encoder {
 	
 				// Sums
 				for(short j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
-					System.out.println(i + " -> " + containerTotalFrequencyArray[j]);
+					System.out.println(j + " -> " + containerTotalFrequencyArray[j]);
 					totalFrequencyArray[j] += slaveFrequencyArray[j];
 				}
 				System.out.println("------------------------");
