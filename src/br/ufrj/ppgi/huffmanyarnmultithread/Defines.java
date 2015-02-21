@@ -2,7 +2,7 @@ package br.ufrj.ppgi.huffmanyarnmultithread;
 
 
 public class Defines {
-	public static final String jobName = "HuffmanYarn"; 
+	public static final String jobName = "HuffmanYarnMultithread"; 
 	
 	public static final int amMemory = 10;
 	public static final int amVCores = 1;
