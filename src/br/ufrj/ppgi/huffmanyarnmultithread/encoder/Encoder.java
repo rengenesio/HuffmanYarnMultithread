@@ -179,6 +179,7 @@ public final class Encoder {
 		
 		// Enqueue thread id's
 		symbolCountOrderedThreadIdQueue = new ArrayBlockingQueue<Integer>(this.numTotalThreads);
+		encoderOrderedThreadIdQueue = new ArrayBlockingQueue<Integer>(this.numTotalThreads);
 		for(int i = 0 ; i < this.numTotalThreads ; i++) {
 			symbolCountOrderedThreadIdQueue.add(i);
 			encoderOrderedThreadIdQueue.add(i);
