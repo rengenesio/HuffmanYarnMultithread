@@ -1,7 +1,9 @@
 package br.ufrj.ppgi.huffmanyarnmultithread.encoder;
 
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -233,26 +235,38 @@ public final class Encoder {
 				
 				public void chunkToFrequency(int chunk) throws IOException {
 					Integer memoryIndex = memoryPartMap.get(chunk);
+					
+					InputSplit inputSplit = null;
+					int i = 0;
+					do {
+						inputSplit = inputSplitCollection.get(i);
+						i++;
+					} while(inputSplit.part != chunk);
+					
+					
 					if(memoryIndex == null) {
 						// Esta parte não está na memória, está no disco
 						System.err.println("Thread " + this.threadId + "   chunk: " + chunk + " (meu chunk está no disco)");
 						
+						FileSystem fs = FileSystem.get(conf);
+						Path path = new Path(fileName);
 						
+						FSDataInputStream f = fs.open(path);
 						
+						byte[] buffer = new byte[4096];
+						
+						int readBytes = -1;
+						while((readBytes = f.read(inputSplit.offset, buffer, 0, 4096)) != -1) {
+							for(int j = 0 ; j < readBytes ; j++) {
+								frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
+							}
+						}
 					}
 					else {
 						// Esta parte está na memória
 						System.err.println("Thread " + this.threadId + "   chunk: " + chunk + " (meu chunk está no disco)");
 						
-						
-						
-						int i = 0;
-						while(inputSplitCollection.get(i).part != chunk) {
-							i++;
-						}
-						
-						int splitLength = inputSplitCollection.get(i).length;
-						for (int j = 0; j < splitLength ; j++) {
+						for (int j = 0; j < inputSplit.length ; j++) {
 							frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
 						}
 					}
@@ -275,10 +289,13 @@ public final class Encoder {
 			}
 		}
 		
-		
+		int containerTotalSymbols = 0;
 		for(int i = 0 ; i < 256 ; i++) {
-			System.err.println(i + " -> " + this.containerTotalFrequencyArray[i]); 
+			System.err.println(i + " -> " + this.containerTotalFrequencyArray[i]);
+			containerTotalSymbols += this.containerTotalFrequencyArray[i];
 		}
+		
+		System.out.println("CONTAINER TOTAL SYMBOLS: " + containerTotalSymbols);
 	
 //		// Matrix to store each slave serialized frequency (only master instantiates)
 //		byte[][] serializedSlaveFrequency = null;
@@ -473,7 +490,7 @@ public final class Encoder {
  	}
 
 	private void chunksToMemory() throws IOException {
-		FileSystem fs = FileSystem.get(conf);
+		FileSystem fs = FileSystem.get(this.conf);
 		Path path = new Path(fileName);
 		
 		FSDataInputStream f = fs.open(path);
