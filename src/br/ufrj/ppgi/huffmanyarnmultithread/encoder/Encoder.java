@@ -98,7 +98,7 @@ public final class Encoder {
 		
 		System.out.println("Número de threads a ser disparadas: " + this.numTotalThreads);
 		
-		orderedThreadIdQueue = new ArrayBlockingQueue<Integer>(1);
+		orderedThreadIdQueue = new ArrayBlockingQueue<Integer>(numTotalThreads);
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			orderedThreadIdQueue.add(new Integer(i));	
 		}
