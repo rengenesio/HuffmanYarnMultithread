@@ -340,6 +340,8 @@ public final class Encoder {
 					actionQueue.add(new String("m " + inputSplit.part));
 				}
 				catch(Exception ex) {
+					System.out.println("Memoria encheu!!!!");
+					System.err.println("Memoria encheu!!!!");
 					memoryFull = true;
 				}
 			}
