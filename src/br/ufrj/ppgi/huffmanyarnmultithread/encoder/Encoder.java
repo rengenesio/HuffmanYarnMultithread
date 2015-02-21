@@ -244,6 +244,7 @@ public final class Encoder {
 			thread.join();
 		}
 		
+		this.totalFrequencyArray = new long[256];		
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			for(int j = 0 ; j < 256 ; j++) {
 				this.totalFrequencyArray[j] += frequencyMatrix[i][j]; 
