@@ -39,13 +39,13 @@ public final class Encoder {
 	
 	// Matriz para armazenar o array de frequência de cada thread disparada
 	private long[][] frequencyMatrix;
-	// Recebe o somatório dos arrays de todas as threads
-	private long[] hostTotalFrequencyArray;
+	// Recebe o somatório dos arrays de todas as threads de um container
+	private long[] containerTotalFrequencyArray;
 	
-	// Somatório dos arrays de todos os hosts
+	// Somatório dos arrays de todos os hosts (apenas o master irá utilizar)
 	private long[] totalFrequencyArray;
 	
-	// Número de símbolos encontrados que este host encontrou
+	// Número de símbolos que o container encontrou
 	private short symbols = 0;
 	
 	
@@ -268,16 +268,16 @@ public final class Encoder {
 			thread.join();
 		}
 		
-		this.hostTotalFrequencyArray = new long[256];		
+		this.containerTotalFrequencyArray = new long[256];		
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			for(int j = 0 ; j < 256 ; j++) {
-				this.totalFrequencyArray[j] += frequencyMatrix[i][j]; 
+				this.containerTotalFrequencyArray[j] += frequencyMatrix[i][j]; 
 			}
 		}
 		
 		
 		for(int i = 0 ; i < 256 ; i++) {
-			System.err.println(i + " -> " + this.totalFrequencyArray[i]); 
+			System.err.println(i + " -> " + this.containerTotalFrequencyArray[i]); 
 		}
 	
 //		// Matrix to store each slave serialized frequency (only master instantiates)
