@@ -46,6 +46,8 @@ public final class Encoder {
 	private int maxThreads = 8;
 	private int numTotalThreads = 1;
 	
+	private Queue<Integer> firstThreadQueue;
+	
 	private Queue<Integer> diskActionQueue;
 	private Queue<Integer> memoryActionQueue;
 	
@@ -72,6 +74,9 @@ public final class Encoder {
 		
 		this.masterHostName = args[2];
 		this.numTotalContainers = Integer.parseInt(args[3]);
+		
+		firstThreadQueue = new ArrayBlockingQueue<Integer>(1);
+		firstThreadQueue.add(new Integer(1));
 		
 		this.diskActionQueue = new ArrayBlockingQueue<Integer>(this.numTotalInputSplits);
 		this.memoryActionQueue = new ArrayBlockingQueue<Integer>(this.numTotalInputSplits);
@@ -102,15 +107,35 @@ public final class Encoder {
 				
 				@Override
 				public void run() {
-					Semaphore actionQueueSemaphore = new Semaphore(1);
-					
 					// Indica se esta thread é a responsável por fazer a contagem das partes em disco
 					boolean diskThread = false;
 					
-					// A thread será responsável por fazer a contagem das partes do arquivo que estão em disco se ela for a primeira e tiver alguma parte em disco
-					if(Thread.currentThread().getId() == 0 && diskActionQueue.isEmpty() == false) {
-						diskThread = true;
+					// Verifica se tem alguma parte no disco
+					if(diskActionQueue.isEmpty() == false) {
+						// Semáforo de exclusão mútua para que duas threads não acessem ao mesmo tempo a fila que vai indicar se a thread é a primeira ou não
+						Semaphore firstQueueSemaphore = new Semaphore(1);
+											
+						// Thread usa o semáforo para acessar a fila para saber se ela será a primeira ou não
+						try {
+							firstQueueSemaphore.acquire();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+	
+						// Pega o próximo elemento da fila (retorna nulo caso a fila esteja vazia)
+						Integer isFirst = memoryActionQueue.poll();
+	
+						// Fim da região de exclusão mútua
+						firstQueueSemaphore.release();
+						
+						// A thread será responsável por fazer a contagem das partes do arquivo que estão em disco se ela for a primeira
+						if(isFirst != null) {
+							diskThread = true;
+						}
 					}
+					
+					// Semáforo de exclusão mútua para que duas threads não acessem ao mesmo tempo a fila de partes do arquivo					
+					Semaphore actionQueueSemaphore = new Semaphore(1);
 					
 					while(true) {
 						Integer chunk = null;
@@ -118,7 +143,7 @@ public final class Encoder {
 						if(diskThread == false) {
 							// Thread que entrar aqui vai pegar as partes da memória
 							
-							// Semáforo de exclusão mútua para que duas threads não acessem a fila ao mesmo tempo
+							// Thread usa o semáforo para acessar a fila
 							try {
 								actionQueueSemaphore.acquire();
 							} catch (InterruptedException e) {
