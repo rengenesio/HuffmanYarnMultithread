@@ -3,8 +3,10 @@ package br.ufrj.ppgi.huffmanyarnmultithread.encoder;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -106,7 +108,10 @@ public final class Encoder {
 	
 
 	
-	public Encoder(String[] args) {
+	public Encoder(String[] args) throws UnknownHostException {
+// (Remover throws ao deletar esta informação de debug
+		System.out.println(InetAddress.getLocalHost().getHostName());
+		
 		// Instantiates a YARN configuration
 		this.configuration = new Configuration();
 
@@ -450,8 +455,6 @@ public final class Encoder {
 		if(this.containerIsMaster) { // Master task (send codification data to all slaves)
 			// Serializes codification data
 			byte[] serializedCodification = SerializationUtility.serializeCodificationArray(codificationArray);
-//			
-			System.out.println("Serialized codification length: " + serializedCodification.length);
 			
 			// Send codification data to all slaves
 			for(int i = 0 ; i < numTotalContainers - 1 ; i++) {
