@@ -18,7 +18,7 @@ public class InputSplit implements Comparable<InputSplit> {
 
 	@Override
 	public String toString() {
-		return new String(this.part + "-" + this.offset + "-" + this.length); 
+		return new String("InputSplit: " + this.part + "-" + this.offset + "-" + this.length); 
 	}
 
 	@Override

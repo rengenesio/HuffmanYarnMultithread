@@ -455,8 +455,6 @@ public final class Encoder {
 		FSDataInputStream f = fs.open(path);
 		
 		memory = new byte[this.numTotalInputSplits][];
-		//memoryPartMap = new int[this.numTotalInputSplits];
-
 
 		int i = 0;
 		boolean memoryFull = false;
