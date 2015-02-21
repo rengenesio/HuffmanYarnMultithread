@@ -131,11 +131,6 @@ public final class Encoder {
 			}
 		}
 
-//
-		for(InputSplit inputSplit : this.inputSplitCollection) {
-			System.err.println("InputSplit: " + inputSplit.toString());
-		}
-
 		// Sets number of total input splits for this container
 		this.numTotalInputSplits = this.inputSplitCollection.size();
 		
@@ -156,11 +151,6 @@ public final class Encoder {
 	
 	public void encode() throws IOException, InterruptedException {
 		chunksToMemory();
-		
-//
-		for(Map.Entry<Integer, Integer> keyValuePair : this.memoryPartMap.entrySet()) {
-			System.err.println("Chunk: " + keyValuePair.getKey() + "   Memory: " + keyValuePair.getValue());
-		}
 
 //
 		if(this.containerIsMaster) {
@@ -169,7 +159,6 @@ public final class Encoder {
 		else {
 			System.err.println("Host is not master!!");
 		}
-		
 		
 		// Ideal thread number (1 to process all disk chunks (if there is any split in disk) + X to process memory chunks, (X is the number of memory chunks))
 		int idealNumThreads = (this.diskInputSplitMetadataQueue.isEmpty() ? 0 : 1) + this.memoryInputSplitMetadataQueue.size();
@@ -187,21 +176,6 @@ public final class Encoder {
 			orderedThreadIdQueue.add(i);
 		}
 		
-//		
-		System.err.println("Número de threads a ser disparadas: " + this.numTotalThreads);
-		
-
-//
-		System.err.println("Disco:");
-		for(InputSplit inputSplit : diskInputSplitMetadataQueue) {
-			System.err.println(inputSplit);
-		}
-//		
-		System.err.println("Memória:");
-		for(InputSplit inputSplit : memoryInputSplitMetadataQueue) {
-			System.err.println(inputSplit);
-		}
-
 		// Collection to store the spawn threads
 		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
 		for(int i = 0 ; i < numTotalThreads ; i++) {
@@ -270,9 +244,6 @@ public final class Encoder {
 							if(inputSplitToProcess == null) { return; }
 						}
 
-//
-						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplitToProcess.toString());
-
 						try {
 							chunkToFrequency(inputSplitToProcess);
 						} catch (IOException e) {
@@ -287,8 +258,6 @@ public final class Encoder {
 					
 					if(memoryIndex == null) {
 						// Split is in disk
-//						
-						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplit.toString() + " (meu chunk está no disco)");
 						
 						FileSystem fs = FileSystem.get(configuration);
 						Path path = new Path(fileName);
@@ -307,14 +276,9 @@ public final class Encoder {
 							
 							totalReadBytes += readBytes;
 						}
-
-//						
-						System.err.println("Final TotalReadBytes: " + totalReadBytes);
 					}
 					else {
 						// Split is in memory
-//						
-						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplit.toString() + " (meu chunk está na memória)");
 						
 						for (int j = 0; j < inputSplit.length ; j++) {
 							frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
@@ -335,7 +299,7 @@ public final class Encoder {
 			thread.join();
 		}
 		
-		// Main thread sums all thread frequencies
+		// Main thread sums all thread frequencies.
 		this.containerTotalFrequencyArray = new long[256];		
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			for(int j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
@@ -343,15 +307,6 @@ public final class Encoder {
 			}
 		}
 		
-//
-		int containerTotalSymbols = 0;
-		for(int i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {			
-			System.err.println(i + " -> " + this.containerTotalFrequencyArray[i]);
-			containerTotalSymbols += this.containerTotalFrequencyArray[i];
-		}
-//		
-		System.out.println("CONTAINER TOTAL SYMBOLS: " + containerTotalSymbols);
-	
 		// Matrix to store each slave serialized frequency (only master instantiates)
 		byte[][] serializedSlaveFrequency = null;
 
@@ -366,23 +321,14 @@ public final class Encoder {
 			ServerSocket serverSocket = new ServerSocket(9996, numTotalContainers);
 			
 			for(int i = 0 ; i < numTotalContainers -1 ; i++) {
-//				
-				//System.out.println("Master aguardando client: " + i);
-				
 				// Blocked waiting for some slave connection
 				Socket clientSocket = serverSocket.accept();
-//				
-				//System.out.println("Client conectou!");
-				
+
 				// When slave connected, instantiates stream to receive slave's frequency data
 			    DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
-//
-			    //System.out.println("Bytes que vou ler: " + 2048);
 			    
 			    // Reads serialized data from slave
 			    dataInputStream.readFully(serializedSlaveFrequency[i], 0, 2048);
-//			    
-			    //System.out.println("Li tudo!!");
 			    
 			    // Instantiates stream to send to slave a port where the slave will listen a connection to receive the codification data
 			    DataOutputStream dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
@@ -393,17 +339,12 @@ public final class Encoder {
 			    
 			    // Close socket with slave
  			    clientSocket.close();
-//			    
-			    //System.out.println("Master recebeu do client: " + i);
 			}
 			
 			// Close ServerSocket after receive from all slaves
 			serverSocket.close();
 		}
 		else { // Slave task (send frequency to master)
-//			
-			//System.out.println("Client tentando conectar com master");
-	
 			Socket socket;
 			// Blocked until connect to master (sleep between tries)
 			while(true) {
@@ -428,12 +369,11 @@ public final class Encoder {
 			DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 			this.slavePort = dataInputStream.readInt();
 			
-//			
-			//System.out.println("Client enviou para o master");
-			
 			// Close socket
 			socket.close();
-			
+
+//
+			System.out.println("Client enviou pro master:");
 			for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 				System.out.println(i + " -> " + containerTotalFrequencyArray[i]);
 			}
@@ -451,11 +391,18 @@ public final class Encoder {
 				long[] slaveFrequencyArray = SerializationUtility.deserializeFrequencyArray(serializedSlaveFrequency[i]);
 	
 				// Sums
+				System.out.println("Master recebeu do client:");
 				for(short j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
 					System.out.println(j + " -> " + slaveFrequencyArray[j]);
 					totalFrequencyArray[j] += slaveFrequencyArray[j];
 				}
 				System.out.println("------------------------");
+			}
+
+			// TODO: tirar essa parte daqui e fazer o master somar sua parte direto no totalFrequencyArray
+			// Master sums its own frequency array
+			for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
+				totalFrequencyArray[i] += containerTotalFrequencyArray[i];
 			}
 			
 			// Free slaves received data
