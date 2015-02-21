@@ -46,7 +46,7 @@ public final class Encoder {
 	private int maxThreads = 8;
 	private int numTotalThreads = 1;
 	
-	private Queue<Integer> firstThreadQueue;
+	private Queue<Integer> orderedThreadIdQueue;
 	
 	private Queue<Integer> diskActionQueue;
 	private Queue<Integer> memoryActionQueue;
@@ -75,9 +75,6 @@ public final class Encoder {
 		this.masterHostName = args[2];
 		this.numTotalContainers = Integer.parseInt(args[3]);
 		
-		firstThreadQueue = new ArrayBlockingQueue<Integer>(1);
-		firstThreadQueue.add(new Integer(1));
-		
 		this.diskActionQueue = new ArrayBlockingQueue<Integer>(this.numTotalInputSplits);
 		this.memoryActionQueue = new ArrayBlockingQueue<Integer>(this.numTotalInputSplits);
 	}
@@ -101,37 +98,41 @@ public final class Encoder {
 		
 		System.out.println("Número de threads a ser disparadas: " + this.numTotalThreads);
 		
+		orderedThreadIdQueue = new ArrayBlockingQueue<Integer>(1);
+		for(int i = 0 ; i < numTotalThreads ; i++) {
+			orderedThreadIdQueue.add(new Integer(i));	
+		}
+	
 		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			Thread thread = new Thread(new Runnable() {
 				
+				int threadId;
+				
 				@Override
 				public void run() {
+					// Semáforo de exclusão mútua para que duas threads não acessem ao mesmo tempo a fila que vai dar id's para as threads
+					Semaphore threadIdQueueSemaphore = new Semaphore(1);
+										
+					// Thread usa o semáforo para acessar a fila para saber seu id
+					try {
+						threadIdQueueSemaphore.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					// Pega o próximo id da fila
+					this.threadId = orderedThreadIdQueue.poll();
+
+					// Fim da região de exclusão mútua
+					threadIdQueueSemaphore.release();
+					
 					// Indica se esta thread é a responsável por fazer a contagem das partes em disco
 					boolean diskThread = false;
 					
-					// Verifica se tem alguma parte no disco
-					if(diskActionQueue.isEmpty() == false) {
-						// Semáforo de exclusão mútua para que duas threads não acessem ao mesmo tempo a fila que vai indicar se a thread é a primeira ou não
-						Semaphore firstQueueSemaphore = new Semaphore(1);
-											
-						// Thread usa o semáforo para acessar a fila para saber se ela será a primeira ou não
-						try {
-							firstQueueSemaphore.acquire();
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-	
-						// Pega o próximo elemento da fila (retorna nulo caso a fila esteja vazia)
-						Integer isFirst = firstThreadQueue.poll();
-	
-						// Fim da região de exclusão mútua
-						firstQueueSemaphore.release();
-						
-						// A thread será responsável por fazer a contagem das partes do arquivo que estão em disco se ela for a primeira
-						if(isFirst != null) {
-							diskThread = true;
-						}
+					// A thread será responsável por fazer a contagem das partes do arquivo que estão em disco se ela for a primeira e tiver alguma parte em disco
+					if(this.threadId == 0 && diskActionQueue.isEmpty() == false) {
+						diskThread = true;
 					}
 					
 					// Semáforo de exclusão mútua para que duas threads não acessem ao mesmo tempo a fila de partes do arquivo					
@@ -189,14 +190,14 @@ public final class Encoder {
 				public void chunkToFrequency(int chunk) throws IOException {
 					if(memoryPartMap.get(chunk) == null) {
 						// Esta parte não está na memória, está no disco
-						System.out.println("Thread " + Thread.currentThread().getId() + "   meu chunk está no disco");
+						System.out.println("Thread " + this.threadId + "   meu chunk está no disco");
 					}
 					else {
 						// Esta parte está na memória
 //						for (int i = 0; i < inputLength; i++) {
 //							frequencyArray[(memory[i] & 0xFF)]++;
 //						}
-						System.out.println("Thread " + Thread.currentThread().getId() + "   meu chunk está na memória");
+						System.out.println("Thread " + this.threadId + "   meu chunk está na memória");
 					}
 				}
 			});
