@@ -210,7 +210,7 @@ public class Client {
 	}
 
 	private void addToLocalResources(FileSystem fs, String fileSrcPath, String fileDstPath, String appId, Map<String, LocalResource> localResources, String resources) throws IOException {
-		String suffix = "HuffmanYarn/" + appId + "/" + fileDstPath;
+		String suffix = "HuffmanYarnMultithread/" + appId + "/" + fileDstPath;
 		Path dst = new Path(fs.getHomeDirectory(), suffix);
 		if (fileSrcPath == null) {
 			FSDataOutputStream ostream = null;

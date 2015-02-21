@@ -12,7 +12,6 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
@@ -212,9 +211,10 @@ public class ApplicationMaster {
 			i++;
 		}
 		
-		Iterator it = hostInputSplit.entrySet().iterator();
+		
+		Iterator<Map.Entry<String, ArrayList<String>>> it = hostInputSplit.entrySet().iterator();
 		while(it.hasNext()) {
-			Map.Entry<String, ArrayList<String>> hashEntry = (Map.Entry<String, ArrayList<String>>) it.next();
+			Map.Entry<String, ArrayList<String>> hashEntry = it.next();
 			
 			String[] containerLocation = { hashEntry.getKey() };
 			ContainerRequest containerAsk = new ContainerRequest(capability, containerLocation, null, priority, false);
@@ -353,7 +353,7 @@ public class ApplicationMaster {
 		}
 		
 		private void addToLocalResources(FileSystem fs, String fileSrcPath, String fileDstPath, String appId, Map<String, LocalResource> localResources, String resources) throws IOException {
-			String suffix = "/user/admin/HuffmanYarn/" + appId + "/" + fileDstPath;
+			String suffix = "/user/admin/HuffmanYarnMultithread/" + appId + "/" + fileDstPath;
 			Path dst = new Path(fs.getHomeDirectory(), suffix);
 			if (fileSrcPath == null) {
 				FSDataOutputStream ostream = null;
@@ -474,12 +474,11 @@ public class ApplicationMaster {
 
 		@Override
 		public void onContainersAllocated(List<Container> allocatedContainers) {
-			LOG.info("Got response from RM for container ask, allocatedCnt="
-					+ allocatedContainers.size());
+			LOG.info("Got response from RM for container ask, allocatedCnt=" + allocatedContainers.size());
 			numAllocatedContainers.addAndGet(allocatedContainers.size());
 			for (Container allocatedContainer : allocatedContainers) {
 				LOG.info("Launching shell command on a new container." + ", containerId=" + allocatedContainer.getId() + ", containerNode=" + allocatedContainer.getNodeId().getHost() + ":" + allocatedContainer.getNodeId().getPort() + ", containerNodeURI=" + allocatedContainer.getNodeHttpAddress() + ", containerResourceMemory" + allocatedContainer.getResource().getMemory()+ ", containerResourceVirtualCores" + allocatedContainer.getResource().getVirtualCores());
-
+				System.out.println("ContainerId= " + allocatedContainer.getId() + ", containerNode= " + allocatedContainer.getNodeId().getHost() + ":" + allocatedContainer.getNodeId().getPort() + ", containerResourceMemory" + allocatedContainer.getResource().getMemory()+ ", containerResourceVirtualCores" + allocatedContainer.getResource().getVirtualCores());
 				LaunchContainerRunnable runnableLaunchContainer = new LaunchContainerRunnable(allocatedContainer, containerListener);
 				Thread launchThread = new Thread(runnableLaunchContainer);
 
@@ -507,7 +506,6 @@ public class ApplicationMaster {
 
 		@Override
 		public void onError(Throwable e) {
-			System.out.println("DEU ERROOOOOOOOOOOOO!");
 			done = true;
 			rmClient.stop();
 		}
