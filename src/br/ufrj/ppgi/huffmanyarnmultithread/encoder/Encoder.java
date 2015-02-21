@@ -71,14 +71,17 @@ public final class Encoder {
 	// Total threads to be spawn
 	private int numTotalThreads = 1;
 	
-	// Queue to store sequencial id's (starts at 0) to threads
-	private Queue<Integer> orderedThreadIdQueue;
+	// Queue to store sequencial id's (starts at 0) to threads (symbol count threads and encoder threads)
+	private Queue<Integer> symbolCountOrderedThreadIdQueue;
+	private Queue<Integer> encoderOrderedThreadIdQueue;
 	
-	// Queue to store disk input splits indicator
-	private Queue<InputSplit> diskInputSplitMetadataQueue;
+	// Queue to store disk input splits indicator (symbol count threads and encoder queues)
+	private Queue<InputSplit> symbolCountDiskInputSplitMetadataQueue;
+	private Queue<InputSplit> encoderDiskInputSplitMetadataQueue;
 	
-	// Queue to store memory input splits indicator
-	private Queue<InputSplit> memoryInputSplitMetadataQueue;
+	// Queue to store memory input splits indicator (symbol count threads and encoder queues)
+	private Queue<InputSplit> symbolCountMemoryInputSplitMetadataQueue;
+	private Queue<InputSplit> encoderMemoryInputSplitMetadataQueue;
 	
 	
 	// ------------------ MASTER CONTAINER PROPERTIES ------------------ //
@@ -146,8 +149,8 @@ public final class Encoder {
 		this.numTotalContainers = Integer.parseInt(args[3]);
 		
 		// Initializes the queues with  
-		this.diskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
-		this.memoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
+		this.symbolCountDiskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
+		this.symbolCountMemoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
 	}
 	
 	
@@ -163,7 +166,7 @@ public final class Encoder {
 		}
 		
 		// Ideal thread number (1 to process all disk chunks (if there is any split in disk) + X to process memory chunks, (X is the number of memory chunks))
-		int idealNumThreads = (this.diskInputSplitMetadataQueue.isEmpty() ? 0 : 1) + this.memoryInputSplitMetadataQueue.size();
+		int idealNumThreads = (this.symbolCountDiskInputSplitMetadataQueue.isEmpty() ? 0 : 1) + this.symbolCountMemoryInputSplitMetadataQueue.size();
 
 		// Limitates the thread number to the max for this container or to the ideal number of threads  
 		if(idealNumThreads > this.maxThreads) { this.numTotalThreads = this.maxThreads; }
@@ -173,12 +176,13 @@ public final class Encoder {
 		frequencyMatrix = new long[this.numTotalThreads][Defines.twoPowerBitsCodification];
 		
 		// Enqueue thread id's
-		orderedThreadIdQueue = new ArrayBlockingQueue<Integer>(this.numTotalThreads);
+		symbolCountOrderedThreadIdQueue = new ArrayBlockingQueue<Integer>(this.numTotalThreads);
 		for(int i = 0 ; i < this.numTotalThreads ; i++) {
-			orderedThreadIdQueue.add(i);
+			symbolCountOrderedThreadIdQueue.add(i);
+			encoderOrderedThreadIdQueue.add(i);
 		}
 		
-		// Collection to store the spawn threads
+		// Collection to store the spawned threads
 		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			Thread thread = new Thread(new Runnable() {
@@ -199,14 +203,14 @@ public final class Encoder {
 					}
 
 					// Take an id from queue
-					this.threadId = orderedThreadIdQueue.poll();
+					this.threadId = symbolCountOrderedThreadIdQueue.poll();
 
 					// Release thread id queue mutex
 					threadIdQueueSemaphore.release();
 					
 					// Indicates if thread will read only disk chunks (only if has some disk part and thread id = 0) 
 					boolean diskThread = false;
-					if(this.threadId == 0 && diskInputSplitMetadataQueue.isEmpty() == false) {
+					if(this.threadId == 0 && symbolCountDiskInputSplitMetadataQueue.isEmpty() == false) {
 						diskThread = true;
 					}
 					
@@ -228,7 +232,7 @@ public final class Encoder {
 							}
 
 							// Take an input split metadata to process
-							inputSplitToProcess = memoryInputSplitMetadataQueue.poll();
+							inputSplitToProcess = symbolCountMemoryInputSplitMetadataQueue.poll();
 
 							// Release memory input split metadata queue mutex
 							memoryInputSplitMetadataQueueSemaphore.release();
@@ -240,7 +244,7 @@ public final class Encoder {
 							// Thread will process memory input splits (no mutex, only 1 thread access the disk input split metadata queue)
 							
 							// Take an input split metadata to process
-							inputSplitToProcess = diskInputSplitMetadataQueue.poll();
+							inputSplitToProcess = symbolCountDiskInputSplitMetadataQueue.poll();
 							
 							// Thread returns if disk input split metadata queue is empty
 							if(inputSplitToProcess == null) { return; }
@@ -416,114 +420,294 @@ public final class Encoder {
 			
 			// Free slaves received data
 			serializedSlaveFrequency = null;
+
+//			
+			long totalSymbols = 0;
 			
-			// Add EOF
-		    totalFrequencyArray[0] = 1;
-		    
 		    // Count total symbols
 		    this.symbols = 0;
-//		    
-		    long totalSymbols = 0;
 		    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 		    	if(this.totalFrequencyArray[i] != 0) {
 		    		this.symbols++;
-//		    		
+		    		
+//
 		    		totalSymbols += this.totalFrequencyArray[i];
 		    	}
 		    }
 
 //		    
-		    System.out.println("TOTAL FREQUENCY:");
-		    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
-		    	System.out.println(i + " ->  " + this.totalFrequencyArray[i]);
-		    }
 		    System.out.println("TOTAL SYMBOLS: " + totalSymbols);
 		    
-//		    this.frequencyToNodeArray();
-//			this.huffmanEncode();
-//			this.treeToCode();
+		    this.frequencyToNodeArray();
+			this.huffmanEncode();
+			this.treeToCode();
 		}
 		
-		
-		
-		
-		
-		
-//		
-//		// Communication between slaves and master 
-//		if(this.inputOffset == 0) { // Master task (send codification data to all slaves)
-//			// Serializes codification data
-//			byte[] serializedCodification = SerializationUtility.serializeCodificationArray(codificationArray);
-////			
-//			System.out.println("Serialized codification length: " + serializedCodification.length);
+		// Communication between slaves and master 
+		if(this.containerIsMaster) { // Master task (send codification data to all slaves)
+			// Serializes codification data
+			byte[] serializedCodification = SerializationUtility.serializeCodificationArray(codificationArray);
 //			
-//			// Send codification data to all slaves
-//			for(int i = 0 ; i < numTotalContainers - 1 ; i++) {
-////				
-//				System.out.println("Master abrindo porta para aguardar client: " + i);
+			System.out.println("Serialized codification length: " + serializedCodification.length);
+			
+			// Send codification data to all slaves
+			for(int i = 0 ; i < numTotalContainers - 1 ; i++) {
 //				
-//				Socket socket;
-//				// Blocked until connect to slave (sleep between tries)
-//				while(true) {
-//					try {
-//						socket = new Socket(hostPortPairArray[i].hostName, hostPortPairArray[i].port);
-//						break;
-//					} catch(Exception e) {
-//						Thread.sleep(1000);
-//					}
-//				}
+				System.out.println("Master abrindo porta para aguardar client: " + i);
+				
+				Socket socket;
+				// Blocked until connect to slave (sleep between tries)
+				while(true) {
+					try {
+						socket = new Socket(containerPortPairArray[i].hostName, containerPortPairArray[i].port);
+						break;
+					} catch(Exception e) {
+						Thread.sleep(1000);
+					}
+				}
+				
+				// Instantiates stream to send data to slave
+				DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+				
+				// Send size of serialized codification to slave
+				dataOutputStream.writeShort(serializedCodification.length);
+				
+				// Send serialized codification to slave
+				dataOutputStream.write(serializedCodification, 0, serializedCodification.length);
 //				
-//				// Instantiates stream to send data to slave
-//				DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-//				
-//				// Send size of serialized codification to slave
-//				dataOutputStream.writeShort(serializedCodification.length);
-//				
-//				// Send serialized codification to slave
-//				dataOutputStream.write(serializedCodification, 0, serializedCodification.length);
-////				
-//				System.out.println("Master recebeu do client: " + i);
-//				
-//				// Close socket with slave
-//				socket.close();
-//			}
-//		
-//			codificationToHDFS();
-//		}
-//		else { // Slaves task (receive codification data from master)
-////			
-//			System.out.println("Client abrindo porta para aguardar master : " + slavePort);
+				System.out.println("Master recebeu do client: " + i);
+				
+				// Close socket with slave
+				socket.close();
+			}
+		
+			codificationToHDFS();
+		}
+		else { // Slaves task (receive codification data from master)
 //			
-//			// Instantiates the socket for receiving data from master
-//			ServerSocket serverSocket = new ServerSocket(slavePort);
-//			
-//			// Blocked until master connection
-//		    Socket clientSocket = serverSocket.accept();
-//		    
-//		    // When master connects, instantiates stream to receive data
-//		    DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
-//		    
-//		    // Number of bytes that client will read
-//		    short serializedCodificationLength = dataInputStream.readShort();
+			System.out.println("Client abrindo porta para aguardar master : " + slavePort);
+			
+			// Instantiates the socket for receiving data from master
+			ServerSocket serverSocket = new ServerSocket(slavePort);
+			
+			// Blocked until master connection
+		    Socket clientSocket = serverSocket.accept();
+		    
+		    // When master connects, instantiates stream to receive data
+		    DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
+		    
+		    // Number of bytes that client will read
+		    short serializedCodificationLength = dataInputStream.readShort();
+
+		    // Array to store serialized codification received
+		    byte[] serializedCodification = new byte[serializedCodificationLength];
+		    
+		    // Receives serialized codification
+		    dataInputStream.readFully(serializedCodification, 0, serializedCodificationLength);
+		    
+		    // Close socket with master
+		    serverSocket.close();
+		    
 //
-//		    // Array to store serialized codification received
-//		    byte[] serializedCodification = new byte[serializedCodificationLength];
-//		    
-//		    // Receives serialized codification
-//		    dataInputStream.readFully(serializedCodification, 0, serializedCodificationLength);
-//		    
-//		    // Close socket with master
-//		    serverSocket.close();
-//		    
-////
-//		    System.out.println("Client recebeu do master");
-//		    
-//		    // Deserializes codification received
-//		    this.codificationArray = SerializationUtility.deserializeCodificationArray(serializedCodification);
-//		}
-//
-//		// Master and slaves task
-//		memoryCompressor();
+		    System.out.println("Client recebeu do master");
+		    
+		    // Deserializes codification received
+		    this.codificationArray = SerializationUtility.deserializeCodificationArray(serializedCodification);
+		}
+
+		// Collection to store the spawned threads
+		threadCollection = new ArrayList<Thread>();
+		for(int i = 0 ; i < numTotalThreads ; i++) {
+			Thread thread = new Thread(new Runnable() {
+				
+				// Thread id get from queue
+				int threadId;
+				
+				@Override
+				public void run() {
+					// Mutex to access thread id queue
+					Semaphore threadIdQueueSemaphore = new Semaphore(1);
+										
+					// Try enter thread id queue mutex
+					try {
+						threadIdQueueSemaphore.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					// Take an id from queue
+					this.threadId = encoderOrderedThreadIdQueue.poll();
+
+					// Release thread id queue mutex
+					threadIdQueueSemaphore.release();
+					
+					// Indicates if thread will read only disk chunks (only if has some disk part and thread id = 0) 
+					boolean diskThread = false;
+					if(this.threadId == 0 && encoderDiskInputSplitMetadataQueue.isEmpty() == false) {
+						diskThread = true;
+					}
+					
+					// Mutex to access memory input split metadata queue					
+					Semaphore memoryInputSplitMetadataQueueSemaphore = new Semaphore(1);
+					
+					// Thread loop until input split metadata queue is empty
+					while(true) {
+						InputSplit inputSplitToProcess = null;
+						
+						if(diskThread == false) {
+							// Thread will process memory input splits
+							
+							// Try enter memory input split metadata queue mutex 
+							try {
+								memoryInputSplitMetadataQueueSemaphore.acquire();
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+
+							// Take an input split metadata to process
+							inputSplitToProcess = encoderMemoryInputSplitMetadataQueue.poll();
+
+							// Release memory input split metadata queue mutex
+							memoryInputSplitMetadataQueueSemaphore.release();
+							
+							// Thread returns if memory input split metadata queue is empty 
+							if(inputSplitToProcess == null) { return; }
+						}
+						else {
+							// Thread will process memory input splits (no mutex, only 1 thread access the disk input split metadata queue)
+							
+							// Take an input split metadata to process
+							inputSplitToProcess = encoderDiskInputSplitMetadataQueue.poll();
+							
+							// Thread returns if disk input split metadata queue is empty
+							if(inputSplitToProcess == null) { return; }
+						}
+
+						try {
+							huffmanCompressor(inputSplitToProcess);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				
+				
+				public void huffmanCompressor(InputSplit inputSplit) throws IOException {
+					// Try access a memory index to this split 
+					Integer memoryIndex = memoryPartMap.get(inputSplit.part);
+					
+					// Output
+			    	FileSystem fsOutput = FileSystem.get(configuration);
+					Path pathOutput = new Path(fileName + ".dir/compressed/part-" + String.format("%08d", inputSplit.part));
+					FSDataOutputStream fOutput = fsOutput.create(pathOutput);
+					
+					BitSet bufferBitSet = null;
+					byte bits = 0;
+					if(memoryIndex == null) {
+						// Split is in disk
+						
+						FileSystem fsInput = FileSystem.get(configuration);
+						Path pathInput = new Path(fileName);
+						
+						FSDataInputStream fInput = fsInput.open(pathInput);
+						
+						byte[] buffer = new byte[Defines.readBufferSize];
+						
+						int readBytes = -1;
+						int totalReadBytes = 0;
+						while(totalReadBytes < inputSplit.length) {
+							readBytes = fInput.read(inputSplit.offset + totalReadBytes, buffer, 0, (totalReadBytes + Defines.readBufferSize > inputSplit.length ? inputSplit.length - totalReadBytes : Defines.readBufferSize));
+							
+							bufferBitSet = new BitSet();
+					        for (int i = 0; i < readBytes ; i++) {
+					            for (short j = 0; j < codificationArray.length ; j++) {
+					                if (buffer[i] == codificationArray[j].symbol) {
+					                    for (byte k = 0; k < codificationArray[j].size; k++) {
+					                        if (codificationArray[j].code[k] == 1)
+					                                bufferBitSet.setBit(bits, true);
+					                        else
+					                                bufferBitSet.setBit(bits, false);
+
+					                        if (++bits == 8) {
+					                                fOutput.write(bufferBitSet.b);
+					                        		bufferBitSet = new BitSet();
+					                                bits = 0;
+					                        }
+					                    }
+					                    break;
+					                }
+					            }
+					        }
+							totalReadBytes += readBytes;
+						}
+					}
+					else {
+						// Split is in memory
+						
+						bufferBitSet = new BitSet();
+				        for (int i = 0; i < inputSplit.length ; i++) {
+				            for (short j = 0; j < codificationArray.length ; j++) {
+				                if (memory[memoryIndex][i] == codificationArray[j].symbol) {
+				                    for (byte k = 0; k < codificationArray[j].size; k++) {
+				                        if (codificationArray[j].code[k] == 1)
+				                                bufferBitSet.setBit(bits, true);
+				                        else
+				                                bufferBitSet.setBit(bits, false);
+
+				                        if (++bits == 8) {
+				                                fOutput.write(bufferBitSet.b);
+				                        		bufferBitSet = new BitSet();
+				                                bits = 0;
+				                        }
+				                    }
+				                    break;
+				                }
+				            }
+				        }
+
+				        if (bits != 0) {
+				        	fOutput.write(bufferBitSet.b);
+				        }
+					}
+					
+					// Add EOF
+					for (short i = 0; i < codificationArray.length ; i++) {
+		                if (codificationArray[i].symbol == 0) {
+		                	for (byte j = 0; j < codificationArray[i].size; j++) {
+		                        if (codificationArray[i].code[j] == 1)
+		                                bufferBitSet.setBit(bits, true);
+		                        else
+		                                bufferBitSet.setBit(bits, false);
+
+		                        if (++bits == 8) {
+		                                fOutput.write(bufferBitSet.b);
+		                        		bufferBitSet = new BitSet();
+		                                bits = 0;
+		                        }
+		                    }
+		                    break;
+		                }
+					}
+					
+			        if (bits != 0) {
+			        	fOutput.write(bufferBitSet.b);
+			        }
+
+			        fOutput.close();
+				}
+			});
+			
+			// Add thread to the collection
+			threadCollection.add(thread);
+			
+			// Starts thread
+			thread.start();
+		}
+		
+		// Wait until all threads finish their jobs
+		for(Thread thread : threadCollection) {
+			thread.join();
+		}
  	}
 
 	private void chunksToMemory() throws IOException {
@@ -548,11 +732,13 @@ public final class Encoder {
 					memoryPartMap.put(inputSplitCollection.get(i).part, i);
 					
 					// Adiciona este chunk na lista de ações a serem feitas da memória
-					memoryInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+					symbolCountMemoryInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+					encoderMemoryInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 				}
 				catch(Error error) {
 					// Adiciona este chunk na lista de ações a serem feitas do disco
-					diskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+					symbolCountDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+					encoderDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 					
 					// Seta a variável de controle para que ele não tente alocar mais espaço na memória
 					memoryFull = true;
@@ -560,7 +746,8 @@ public final class Encoder {
 			}
 			else {
 				// Adiciona este chunk na lista de ações a serem feitas do disco
-				diskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+				symbolCountDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+				encoderDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 			}
 		}
 	}
@@ -650,44 +837,8 @@ public final class Encoder {
 		f.close();
 	}
 
-//    public void memoryCompressor() throws IOException {
-//    	FileSystem fs = FileSystem.get(this.conf);
-//		Path path = new Path(fileName + ".dir/compressed/part-" + String.format("%08d", this.inputPartId));
-//		
-//		FSDataOutputStream f = fs.create(path);
-//		
-//		BitSet buffer = new BitSet();
-//
-//        byte bits = 0;
-//        for (int i = 0; i < memory.length ; i++) {
-//            for (short j = 0; j < this.codificationArray.length ; j++) {
-//                if (this.memory[i] == this.codificationArray[j].symbol) {
-//                    for (byte k = 0; k < codificationArray[j].size; k++) {
-//                        if (codificationArray[j].code[k] == 1)
-//                                buffer.setBit(bits, true);
-//                        else
-//                                buffer.setBit(bits, false);
-//
-//                        if (++bits == 8) {
-//                                f.write(buffer.b);
-//                        		buffer = new BitSet();
-//                                bits = 0;
-//                        }
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-//
-//        if (bits != 0) {
-//        	f.write(buffer.b);
-//        }
-//        
-//
-//        f.close();
-//	}
 
-	
+
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		Encoder encoder = new Encoder(args);
