@@ -134,8 +134,11 @@ public final class Encoder {
 			if(inputSplit.part == 0) {
 				this.containerIsMaster = true;
 			}
+			
+//
+			System.out.println(inputSplit);
 		}
-
+		
 		// Sets number of total input splits for this container
 		this.numTotalInputSplits = this.inputSplitCollection.size();
 		
@@ -384,17 +387,18 @@ public final class Encoder {
 			
 			// Close socket
 			socket.close();
-
-//
-			System.out.println("Client enviou pro master:");
-			long totalSymbols = 0;
-			for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
-				System.out.println(i + " -> " + containerTotalFrequencyArray[i]);
-				totalSymbols += containerTotalFrequencyArray[i];
-			}
-			System.out.println("Total symbols: " + totalSymbols);
 		}
 		
+//		
+		long totalSymbolsForContainer = 0;
+	    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
+//	    	
+	    		totalSymbolsForContainer += this.totalFrequencyArray[i];
+    	}
+//		
+	    System.out.println("TotalSymbols in this container: " + totalSymbolsForContainer);
+	    	
+	    
 		
 		// Sequential part (only master container)
 		if(this.containerIsMaster) {
@@ -407,12 +411,9 @@ public final class Encoder {
 				long[] slaveFrequencyArray = SerializationUtility.deserializeFrequencyArray(serializedSlaveFrequency[i]);
 	
 				// Sums
-				System.out.println("Master recebeu do client:");
 				for(short j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
-					System.out.println(j + " -> " + slaveFrequencyArray[j]);
 					totalFrequencyArray[j] += slaveFrequencyArray[j];
 				}
-				System.out.println("------------------------");
 			}
 
 			// TODO: tirar essa parte daqui e fazer o master somar sua parte direto no totalFrequencyArray
@@ -437,9 +438,8 @@ public final class Encoder {
 		    		totalSymbols += this.totalFrequencyArray[i];
 		    	}
 		    }
-
 //		    
-		    System.out.println("TOTAL SYMBOLS: " + totalSymbols);
+		    System.out.println("TOTAL SYMBOLS for all containers: " + totalSymbols);
 		    
 		    this.frequencyToNodeArray();
 			this.huffmanEncode();
@@ -733,11 +733,15 @@ public final class Encoder {
 					// Adiciona este chunk na lista de ações a serem feitas da memória
 					symbolCountMemoryInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 					encoderMemoryInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+					
+					System.out.println("Memória: " + inputSplitCollection.get(i));
 				}
 				catch(Error error) {
 					// Adiciona este chunk na lista de ações a serem feitas do disco
 					symbolCountDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 					encoderDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+					
+					System.out.println("Disco: " + inputSplitCollection.get(i));
 					
 					// Seta a variável de controle para que ele não tente alocar mais espaço na memória
 					memoryFull = true;
@@ -747,6 +751,8 @@ public final class Encoder {
 				// Adiciona este chunk na lista de ações a serem feitas do disco
 				symbolCountDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 				encoderDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
+				
+				System.out.println("Disco: " + inputSplitCollection.get(i));
 			}
 		}
 	}
