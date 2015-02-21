@@ -73,19 +73,19 @@ public class SerializationUtility {
 		int index = 0;
 		for(int i = 0 ; i < byteArray.length ; i += 8) {
 			frequencyArray[index] += (byteArray[i] & 0xFF);
-			frequencyArray[index] <<= 4;
+			frequencyArray[index] <<= 8;
 			frequencyArray[index] += (byteArray[i+1] & 0xFF);
-			frequencyArray[index] <<= 4;
+			frequencyArray[index] <<= 8;
 			frequencyArray[index] += (byteArray[i+2] & 0xFF);
-			frequencyArray[index] <<= 4;
+			frequencyArray[index] <<= 8;
 			frequencyArray[index] += (byteArray[i+3] & 0xFF);
-			frequencyArray[index] <<= 4;
+			frequencyArray[index] <<= 8;
 			frequencyArray[index] += (byteArray[i+4] & 0xFF);
-			frequencyArray[index] <<= 4;
+			frequencyArray[index] <<= 8;
 			frequencyArray[index] += (byteArray[i+5] & 0xFF);
-			frequencyArray[index] <<= 4;
+			frequencyArray[index] <<= 8;
 			frequencyArray[index] += (byteArray[i+6] & 0xFF);
-			frequencyArray[index] <<= 4;
+			frequencyArray[index] <<= 8;
 			frequencyArray[index] += (byteArray[i+7] & 0xFF);
 
 			index++;
