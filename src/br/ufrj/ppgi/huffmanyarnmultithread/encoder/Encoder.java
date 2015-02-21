@@ -667,10 +667,6 @@ public final class Encoder {
 				                }
 				            }
 				        }
-
-				        if (bits != 0) {
-				        	fOutput.write(bufferBitSet.b);
-				        }
 					}
 					
 					// Add EOF
