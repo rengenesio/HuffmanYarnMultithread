@@ -54,19 +54,19 @@ public class SerializationUtility {
 		return codificationArray;
 	}
 	
-	public static byte[] serializeFrequencyArray(int[] frequencyArray) throws IOException {
+	public static byte[] serializeFrequencyArray(long[] frequencyArray) throws IOException {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
 		
 		for (int i = 0; i < frequencyArray.length; ++i) {
-			dataOutputStream.writeInt(frequencyArray[i]);
+			dataOutputStream.writeLong(frequencyArray[i]);
 		}
 
 		return byteArrayOutputStream.toByteArray();
 	}
 	
-	public static int[] deserializeFrequencyArray(byte[] byteArray) {
-		int[] frequencyArray = new int[256];
+	public static long[] deserializeFrequencyArray(byte[] byteArray) {
+		long[] frequencyArray = new long[256];
 		
 		//System.arraycopy(byteArray, 0, frequencyArray, 0, byteArray.length);
 		
@@ -79,6 +79,14 @@ public class SerializationUtility {
 			frequencyArray[index] += (byteArray[i+2] & 0xFF);
 			frequencyArray[index] <<= 8;
 			frequencyArray[index] += (byteArray[i+3] & 0xFF);
+			frequencyArray[index] <<= 8;
+			frequencyArray[index] += (byteArray[i+4] & 0xFF);
+			frequencyArray[index] <<= 8;
+			frequencyArray[index] += (byteArray[i+5] & 0xFF);
+			frequencyArray[index] <<= 8;
+			frequencyArray[index] += (byteArray[i+6] & 0xFF);
+			frequencyArray[index] <<= 8;
+			frequencyArray[index] += (byteArray[i+7] & 0xFF);
 
 			index++;
 		}

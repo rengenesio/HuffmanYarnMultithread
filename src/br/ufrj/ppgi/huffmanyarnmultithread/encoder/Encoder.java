@@ -1,14 +1,13 @@
 package br.ufrj.ppgi.huffmanyarnmultithread.encoder;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
-
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -22,6 +21,7 @@ import br.ufrj.ppgi.huffmanyarnmultithread.InputSplit;
 public final class Encoder {
 	// Configuration
 	private Configuration conf;
+	
 	
 	private String fileName;
 	private ArrayList<InputSplit> inputSplitCollection;
@@ -37,9 +37,18 @@ public final class Encoder {
 	// Associates a inputSplit with a index in memory matrix
 	private Map<Integer, Integer> memoryPartMap; 
 	
+	// Matriz para armazenar o array de frequência de cada thread disparada
 	private long[][] frequencyMatrix;
+	// Recebe o somatório dos arrays de todas as threads
+	private long[] hostTotalFrequencyArray;
+	
+	// Somatório dos arrays de todos os hosts
 	private long[] totalFrequencyArray;
+	
+	// Número de símbolos encontrados que este host encontrou
 	private short symbols = 0;
+	
+	
 	private NodeArray nodeArray;
 	private Codification[] codificationArray;
 	
@@ -52,6 +61,8 @@ public final class Encoder {
 	
 	private Queue<Integer> diskActionQueue;
 	private Queue<Integer> memoryActionQueue;
+	
+	
 	
 	public Encoder(String[] args) {
 		this.conf = new Configuration();
@@ -257,7 +268,7 @@ public final class Encoder {
 			thread.join();
 		}
 		
-		this.totalFrequencyArray = new long[256];		
+		this.hostTotalFrequencyArray = new long[256];		
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			for(int j = 0 ; j < 256 ; j++) {
 				this.totalFrequencyArray[j] += frequencyMatrix[i][j]; 
@@ -272,11 +283,9 @@ public final class Encoder {
 //		// Matrix to store each slave serialized frequency (only master instantiates)
 //		byte[][] serializedSlaveFrequency = null;
 //
-//
-//
-//		if(this.inputOffset == 0) { // Master task (receive frequency data from all slaves)
+//		if(this.hostIsMaster) { // Master task (receive frequency data from all slaves)
 //			// Instantiates matrix
-//			serializedSlaveFrequency = new byte[numTotalContainers - 1][1024];
+//			serializedSlaveFrequency = new byte[numTotalContainers - 1][4096];
 //			
 //			// Stores informations about slaves, to connect to them to send codification data
 //			this.hostPortPairArray = new HostPortPair[numTotalContainers - 1];
