@@ -257,7 +257,8 @@ public final class Encoder {
 						
 						int readBytes = -1;
 						int totalReadBytes = 0;
-						while((readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, 4096)) != -1) {
+						// TODO: corrigir o quanto deve ser lido. Tenho que ler só até o final da minha parte do arquivo, se eu ler de 4096 em 4096, estarei lendo até o final do arquivo
+						while((readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, -------------------)) != -1) {
 							for(int j = 0 ; j < readBytes ; j++) {
 								frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
 							}
