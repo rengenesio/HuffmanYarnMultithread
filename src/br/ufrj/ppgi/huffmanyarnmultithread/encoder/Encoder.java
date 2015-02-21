@@ -393,7 +393,7 @@ public final class Encoder {
 		long totalSymbolsForContainer = 0;
 	    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 //	    	
-	    		totalSymbolsForContainer += this.totalFrequencyArray[i];
+	    		totalSymbolsForContainer += this.containerTotalFrequencyArray[i];
     	}
 //		
 	    System.out.println("TotalSymbols in this container: " + totalSymbolsForContainer);
