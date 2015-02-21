@@ -377,10 +377,10 @@ public final class Encoder {
 				// When slave connected, instantiates stream to receive slave's frequency data
 			    DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
 //
-			    System.out.println("Bytes que vou ler: " + 1024);
+			    System.out.println("Bytes que vou ler: " + 2048);
 			    
 			    // Reads serialized data from slave
-			    dataInputStream.readFully(serializedSlaveFrequency[i], 0, 1024);
+			    dataInputStream.readFully(serializedSlaveFrequency[i], 0, 2048);
 //			    
 			    System.out.println("Li tudo!!");
 			    
