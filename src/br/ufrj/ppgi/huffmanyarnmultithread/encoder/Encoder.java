@@ -73,10 +73,10 @@ public final class Encoder {
 	private Queue<Integer> orderedThreadIdQueue;
 	
 	// Queue to store disk input splits indicator
-	private Queue<InputSplit> diskQueue;
+	private Queue<InputSplit> diskInputSplitMetadataQueue;
 	
 	// Queue to store memory input splits indicator
-	private Queue<InputSplit> memoryQueue;
+	private Queue<InputSplit> memoryInputSplitMetadataQueue;
 	
 	
 	// ------------------ MASTER CONTAINER PROPERTIES ------------------ //
@@ -149,8 +149,8 @@ public final class Encoder {
 		this.numTotalContainers = Integer.parseInt(args[3]);
 		
 		// Initializes the queues with  
-		this.diskQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
-		this.memoryQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
+		this.diskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
+		this.memoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
 	}
 	
 	
@@ -171,110 +171,112 @@ public final class Encoder {
 		}
 		
 		
-		// Número ideal de threads (1 para disco (se tiver alguma parte em disco) + X para memória, onde X é o número de chunks na memória)
-		int idealNumThreads = this.memoryQueue.size() + (this.diskQueue.isEmpty() ? 0 : 1);
+		// Ideal thread number (1 to process all disk chunks (if there is any split in disk) + X to process memory chunks, (X is the number of memory chunks))
+		int idealNumThreads = (this.diskInputSplitMetadataQueue.isEmpty() ? 0 : 1) + this.memoryInputSplitMetadataQueue.size();
 
-		if(idealNumThreads > this.maxThreads) {
-			// Se o número ideal de threads for maior que o número máximo de threads, limito pelo número máximo de threads 
-			this.numTotalThreads = this.maxThreads;
-		}
-		else {
-			// Se o número ideal de threads for menor que o número máximo de threads, limito pelo número ideal
-			this.numTotalThreads = idealNumThreads;
-		}
+		// Limitates the thread number to the max for this container or to the ideal number of threads  
+		if(idealNumThreads > this.maxThreads) { this.numTotalThreads = this.maxThreads; }
+		else { this.numTotalThreads = idealNumThreads; }
 		
-		// Aloca o espaço onde cada thread vai contar os seus símbolos
+		// Alloc memory to each thread frequency array
 		frequencyMatrix = new long[this.numTotalThreads][Defines.twoPowerBitsCodification];
 		
+		// Enqueue thread id's
+		for(int i = 0 ; i < this.numTotalThreads ; i++) {
+			orderedThreadIdQueue.add(i);
+		}
+		
+//		
 		System.err.println("Número de threads a ser disparadas: " + this.numTotalThreads);
 		
 
 //
 		System.err.println("Disco:");
-		for(InputSplit inputSplit : diskQueue) {
+		for(InputSplit inputSplit : diskInputSplitMetadataQueue) {
 			System.err.println(inputSplit);
 		}
 //		
 		System.err.println("Memória:");
-		for(InputSplit inputSplit : memoryQueue) {
+		for(InputSplit inputSplit : memoryInputSplitMetadataQueue) {
 			System.err.println(inputSplit);
 		}
-	
+
+		// Collection to store the spawn threads
 		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			Thread thread = new Thread(new Runnable() {
 				
+				// Thread id get from queue
 				int threadId;
 				
 				@Override
 				public void run() {
-					// Semáforo de exclusão mútua para que duas threads não acessem ao mesmo tempo a fila que vai dar id's para as threads
+					// Mutex to access thread id queue
 					Semaphore threadIdQueueSemaphore = new Semaphore(1);
 										
-					// Thread usa o semáforo para acessar a fila para saber seu id
+					// Try enter thread id queue mutex
 					try {
 						threadIdQueueSemaphore.acquire();
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 
-					// Pega o próximo id da fila
+					// Take an id from queue
 					this.threadId = orderedThreadIdQueue.poll();
 
-					// Fim da região de exclusão mútua
+					// Release thread id queue mutex
 					threadIdQueueSemaphore.release();
 					
-					// Indica se esta thread é a responsável por fazer a contagem das partes em disco
+					// Indicates if thread will read only disk chunks (only if has some disk part and thread id = 0) 
 					boolean diskThread = false;
-					
-					// A thread será responsável por fazer a contagem das partes do arquivo que estão em disco se ela for a primeira e tiver alguma parte em disco
-					if(this.threadId == 0 && diskQueue.isEmpty() == false) {
+					if(this.threadId == 0 && diskInputSplitMetadataQueue.isEmpty() == false) {
 						diskThread = true;
 					}
 					
-					// Semáforo de exclusão mútua para que duas threads não acessem ao mesmo tempo a fila de partes do arquivo					
-					Semaphore actionQueueSemaphore = new Semaphore(1);
+					// Mutex to access memory input split metadata queue					
+					Semaphore memoryInputSplitMetadataQueueSemaphore = new Semaphore(1);
 					
+					// Thread loop until input split metadata queue is empty
 					while(true) {
 						InputSplit inputSplitToProcess = null;
 						
 						if(diskThread == false) {
-							// Thread que entrar aqui vai pegar as partes da memória
+							// Thread will process memory input splits
 							
-							// Thread usa o semáforo para acessar a fila
+							// Try enter memory input split metadata queue mutex 
 							try {
-								actionQueueSemaphore.acquire();
+								memoryInputSplitMetadataQueueSemaphore.acquire();
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
 
-							// Pega o próximo elemento da fila (retorna nulo caso a fila esteja vazia)
-							inputSplitToProcess = memoryQueue.poll();
+							// Take an input split metadata to process
+							inputSplitToProcess = memoryInputSplitMetadataQueue.poll();
 
-							// Fim da região de exclusão mútua
-							actionQueueSemaphore.release();
+							// Release memory input split metadata queue mutex
+							memoryInputSplitMetadataQueueSemaphore.release();
 							
-							// Encerra se a fila estiver vazia
+							// Thread returns if memory input split metadata queue is empty 
 							if(inputSplitToProcess == null) { return; }
 						}
 						else {
-							// Thread que entrar aqui vai pegar as partes do disco (não precisa de exclusão mútua pois apenas uma thread é responsável pelos chunks que não foram carregados em memória)
+							// Thread will process memory input splits (no mutex, only 1 thread access the disk input split metadata queue)
 							
-							// Pega o próximo elemento da fila (retorna nulo caso a fila esteja vazia)
-							inputSplitToProcess = diskQueue.poll();
+							// Take an input split metadata to process
+							inputSplitToProcess = diskInputSplitMetadataQueue.poll();
 							
-							// Encerra se a fila estiver vazia
+							// Thread returns if disk input split metadata queue is empty
 							if(inputSplitToProcess == null) { return; }
 						}
 
 //
 						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplitToProcess.toString());
-						
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
+												
+//						try {
+//							Thread.sleep(1000);
+//						} catch (InterruptedException e) {
+//							e.printStackTrace();
+//						}
 						
 						
 						try {
@@ -286,10 +288,11 @@ public final class Encoder {
 				}
 				
 				public void chunkToFrequency(InputSplit inputSplit) throws IOException {
+					// Try access a memory index to this split 
 					Integer memoryIndex = memoryPartMap.get(inputSplit.part);
 					
 					if(memoryIndex == null) {
-						// Esta parte não está na memória, está no disco
+						// Split is in disk
 //						
 						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplit.toString() + " (meu chunk está no disco)");
 						
@@ -315,7 +318,7 @@ public final class Encoder {
 						System.err.println("Final TotalReadBytes: " + totalReadBytes);
 					}
 					else {
-						// Esta parte está na memória
+						// Split is in memory
 //						
 						System.err.println("Thread " + this.threadId + "   inputSplit: " + inputSplit.toString() + " (meu chunk está no disco)");
 						
@@ -326,15 +329,19 @@ public final class Encoder {
 				}
 			});
 			
+			// Add thread to the collection
 			threadCollection.add(thread);
+			
+			// Starts thread
 			thread.start();
 		}
 		
-		// Bloqueia até que todas as threads tenham terminado a contagem dos caracteres
+		// Wait until all threads finish their jobs
 		for(Thread thread : threadCollection) {
 			thread.join();
 		}
 		
+		// Main thread sums all thread frequencies
 		this.containerTotalFrequencyArray = new long[256];		
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			for(int j = 0 ; j < 256 ; j++) {
@@ -586,11 +593,11 @@ public final class Encoder {
 					memoryPartMap.put(inputSplitCollection.get(i).part, i);
 					
 					// Adiciona este chunk na lista de ações a serem feitas da memória
-					memoryQueue.add(inputSplitCollection.get(i));
+					memoryInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 				}
 				catch(Error error) {
 					// Adiciona este chunk na lista de ações a serem feitas do disco
-					diskQueue.add(inputSplitCollection.get(i));
+					diskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 					
 					// Seta a variável de controle para que ele não tente alocar mais espaço na memória
 					memoryFull = true;
@@ -598,7 +605,7 @@ public final class Encoder {
 			}
 			else {
 				// Adiciona este chunk na lista de ações a serem feitas do disco
-				diskQueue.add(inputSplitCollection.get(i));
+				diskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 			}
 			
 			i++;
