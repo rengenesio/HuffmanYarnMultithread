@@ -45,7 +45,7 @@ public class Main {
 		in = new String(args[0]);
 		out = new String(in);
 		cb = new String(in);
-		in += ".yarnmultthreaddir/compressed/";
+		in += ".yarnmultithreaddir/compressed/";
 		out += ".yarnmultithreaddir/decompressed";
 		cb += ".dir/codification";
 		
