@@ -621,17 +621,10 @@ public final class Encoder {
 						
 						int readBytes = -1;
 						int totalReadBytes = 0;
+						bufferBitSet = new BitSet();
 						while(totalReadBytes < inputSplit.length) {
 							readBytes = fInput.read(inputSplit.offset + totalReadBytes, buffer, 0, (totalReadBytes + Defines.readBufferSize > inputSplit.length ? inputSplit.length - totalReadBytes : Defines.readBufferSize));
 							
-							if(readBytes < Defines.readBufferSize || totalReadBytes + readBytes >= inputSplit.length) {
-								System.out.println("ReadBytes = " + readBytes + "    TotalReadBytes = " + totalReadBytes);
-								for(int i = 0 ; i < readBytes ; i++) {
-									System.out.print(buffer[i]);
-								}
-							}
-							
-							bufferBitSet = new BitSet();
 					        for (int i = 0; i < readBytes ; i++) {
 					            for (short j = 0; j < codificationArray.length ; j++) {
 					                if (buffer[i] == codificationArray[j].symbol) {
