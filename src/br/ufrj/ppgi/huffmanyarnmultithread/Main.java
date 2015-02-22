@@ -42,21 +42,21 @@ public class Main {
 		t = t2 - t1;
 		System.out.println(t/1000000000.0 + " s (encoder)");
 
-//		in = new String(args[0]);
-//		out = new String(in);
-//		cb = new String(in);
-//		in += ".yarnmultithreaddir/compressed/";
-//		out += ".yarnmultithreaddir/decompressed";
-//		cb += ".yarnmultithreaddir/codification";
-//		
-//		System.out.println(in);
-//		System.out.println(out);
-//		System.out.println(cb);
-//		
-//		t1 = System.nanoTime();
-//		new Decoder(in, out, cb);
-//		t2 = System.nanoTime();
-//		t = t2 - t1;
-//		System.out.println(t/1000000000.0 + " s (decoder)");
+		in = new String(args[0]);
+		out = new String(in);
+		cb = new String(in);
+		in += ".yarnmultithreaddir/compressed/";
+		out += ".yarnmultithreaddir/decompressed";
+		cb += ".yarnmultithreaddir/codification";
+		
+		System.out.println(in);
+		System.out.println(out);
+		System.out.println(cb);
+		
+		t1 = System.nanoTime();
+		new Decoder(in, out, cb);
+		t2 = System.nanoTime();
+		t = t2 - t1;
+		System.out.println(t/1000000000.0 + " s (decoder)");
 	}
 }
