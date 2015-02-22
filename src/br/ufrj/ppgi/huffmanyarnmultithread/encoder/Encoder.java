@@ -421,7 +421,6 @@ public final class Encoder {
 				}
 			}
 
-			// TODO: tirar essa parte daqui e fazer o master somar sua parte direto no totalFrequencyArray
 			// Master sums its own frequency array
 			for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 				totalFrequencyArray[i] += containerTotalFrequencyArray[i];
