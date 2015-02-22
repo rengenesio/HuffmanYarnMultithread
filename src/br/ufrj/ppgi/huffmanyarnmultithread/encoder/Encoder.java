@@ -59,7 +59,7 @@ public final class Encoder {
 	private Map<Integer, Integer> memoryPartMap;
 	
 	// Matrix to store each thread's frequency array
-	private long[][] frequencyMatrix;
+	//private long[][] frequencyMatrix;
 	
 	// Número de símbolos que o container encontrou
 	private short symbols = 0;
@@ -183,7 +183,7 @@ public final class Encoder {
 		else { this.numTotalThreads = idealNumThreads; }
 		
 		// Alloc memory to each thread frequency array
-		frequencyMatrix = new long[this.numTotalThreads][Defines.twoPowerBitsCodification];
+		//frequencyMatrix = new long[this.numTotalThreads][Defines.twoPowerBitsCodification];
 		
 		// Enqueue thread id's
 		symbolCountOrderedThreadIdQueue = new ArrayBlockingQueue<Integer>(this.numTotalThreads);
@@ -193,10 +193,14 @@ public final class Encoder {
 			encoderOrderedThreadIdQueue.add(i);
 		}
 		
+		containerTotalFrequencyArray = new long[256];
+		
 		// Collection to store the spawned threads
 		ArrayList<Thread> threadCollection = new ArrayList<Thread>();
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			Thread thread = new Thread(new Runnable() {
+
+				Semaphore frequencyArrayMutex = new Semaphore(1);
 				
 				// Thread id get from queue
 				int threadId;
@@ -244,7 +248,7 @@ public final class Encoder {
 
 							// Take an input split metadata to process
 							inputSplitToProcess = symbolCountMemoryInputSplitMetadataQueue.poll();
-
+							
 							// Release memory input split metadata queue mutex
 							memoryInputSplitMetadataQueueSemaphore.release();
 							
@@ -263,13 +267,13 @@ public final class Encoder {
 
 						try {
 							chunkToFrequency(inputSplitToProcess);
-						} catch (IOException e) {
+						} catch (Exception e) {
 							e.printStackTrace();
 						}
 					}
 				}
 				
-				public void chunkToFrequency(InputSplit inputSplit) throws IOException {
+				public void chunkToFrequency(InputSplit inputSplit) throws IOException, InterruptedException {
 					// Try access a memory index to this split 
 					Integer memoryIndex = memoryPartMap.get(inputSplit.part);
 					
@@ -288,7 +292,11 @@ public final class Encoder {
 						while(totalReadBytes < inputSplit.length) {
 							readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, (totalReadBytes + Defines.readBufferSize > inputSplit.length ? inputSplit.length - totalReadBytes : Defines.readBufferSize));
 							for(int j = 0 ; j < readBytes ; j++) {
-								frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
+								//frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
+								
+								this.frequencyArrayMutex.acquire();
+								containerTotalFrequencyArray[buffer[j] & 0xFF]++;
+								this.frequencyArrayMutex.release();
 							}
 							
 							totalReadBytes += readBytes;
@@ -298,12 +306,16 @@ public final class Encoder {
 						// Split is in memory
 						
 						for (int j = 0; j < inputSplit.length ; j++) {
-							frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
+							//frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
+							
+							this.frequencyArrayMutex.acquire();
+							containerTotalFrequencyArray[memory[memoryIndex][j] & 0xFF]++;
+							this.frequencyArrayMutex.release();
 						}
 					}
 					
 					// Add EOF to symbol count
-					frequencyMatrix[this.threadId][0]++;
+					//frequencyMatrix[this.threadId][0]++;
 					
 				}
 			});
@@ -320,13 +332,13 @@ public final class Encoder {
 			thread.join();
 		}
 		
-		// Main thread sums all thread frequencies.
-		this.containerTotalFrequencyArray = new long[Defines.twoPowerBitsCodification];		
-		for(int i = 0 ; i < numTotalThreads ; i++) {
-			for(int j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
-				this.containerTotalFrequencyArray[j] += frequencyMatrix[i][j]; 
-			}
-		}
+//		// Main thread sums all thread frequencies.
+//		this.containerTotalFrequencyArray = new long[Defines.twoPowerBitsCodification];		
+//		for(int i = 0 ; i < numTotalThreads ; i++) {
+//			for(int j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
+//				this.containerTotalFrequencyArray[j] += frequencyMatrix[i][j]; 
+//			}
+//		}
 		
 		// Matrix to store each slave serialized frequency (only master instantiates)
 		byte[][] serializedSlaveFrequency = null;
