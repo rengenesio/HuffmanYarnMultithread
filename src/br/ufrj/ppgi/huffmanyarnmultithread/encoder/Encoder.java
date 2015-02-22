@@ -59,7 +59,7 @@ public final class Encoder {
 	private Map<Integer, Integer> memoryPartMap;
 	
 	// Matrix to store each thread's frequency array
-	//private long[][] frequencyMatrix;
+	private long[][] frequencyMatrix;
 	
 	// Número de símbolos que o container encontrou
 	private short symbols = 0;
@@ -157,23 +157,15 @@ public final class Encoder {
 		this.numTotalContainers = Integer.parseInt(args[3]);
 		
 		// Initializes the queues with  
-		this.symbolCountDiskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
-		this.encoderDiskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
-		this.symbolCountMemoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
-		this.encoderMemoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits);
+		this.symbolCountDiskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits, true);
+		this.encoderDiskInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits, true);
+		this.symbolCountMemoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits, true);
+		this.encoderMemoryInputSplitMetadataQueue = new ArrayBlockingQueue<InputSplit>(this.numTotalInputSplits, true);
 	}
 	
 	
 	public void encode() throws IOException, InterruptedException {
 		chunksToMemory();
-
-//
-		if(this.containerIsMaster) {
-			System.err.println("Host is master!!");
-		}
-		else {
-			System.err.println("Host is not master!!");
-		}
 		
 		// Ideal thread number (1 to process all disk chunks (if there is any split in disk) + X to process memory chunks, (X is the number of memory chunks))
 		int idealNumThreads = (this.symbolCountDiskInputSplitMetadataQueue.isEmpty() ? 0 : 1) + this.symbolCountMemoryInputSplitMetadataQueue.size();
@@ -183,7 +175,7 @@ public final class Encoder {
 		else { this.numTotalThreads = idealNumThreads; }
 		
 		// Alloc memory to each thread frequency array
-		//frequencyMatrix = new long[this.numTotalThreads][Defines.twoPowerBitsCodification];
+		frequencyMatrix = new long[this.numTotalThreads][Defines.twoPowerBitsCodification];
 		
 		// Enqueue thread id's
 		symbolCountOrderedThreadIdQueue = new ArrayBlockingQueue<Integer>(this.numTotalThreads);
@@ -200,28 +192,26 @@ public final class Encoder {
 		for(int i = 0 ; i < numTotalThreads ; i++) {
 			Thread thread = new Thread(new Runnable() {
 
-				Semaphore frequencyArrayMutex = new Semaphore(1);
-				
 				// Thread id get from queue
 				int threadId;
 				
 				@Override
 				public void run() {
-					// Mutex to access thread id queue
-					Semaphore threadIdQueueSemaphore = new Semaphore(1);
-										
-					// Try enter thread id queue mutex
-					try {
-						threadIdQueueSemaphore.acquire();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+//					// Mutex to access thread id queue
+//					Semaphore threadIdQueueSemaphore = new Semaphore(1);
+//										
+//					// Try enter thread id queue mutex
+//					try {
+//						threadIdQueueSemaphore.acquire();
+//					} catch (InterruptedException e) {
+//						e.printStackTrace();
+//					}
 
 					// Take an id from queue
 					this.threadId = symbolCountOrderedThreadIdQueue.poll();
 
-					// Release thread id queue mutex
-					threadIdQueueSemaphore.release();
+//					// Release thread id queue mutex
+//					threadIdQueueSemaphore.release();
 					
 					// Indicates if thread will read only disk chunks (only if has some disk part and thread id = 0) 
 					boolean diskThread = false;
@@ -229,8 +219,8 @@ public final class Encoder {
 						diskThread = true;
 					}
 					
-					// Mutex to access memory input split metadata queue					
-					Semaphore memoryInputSplitMetadataQueueSemaphore = new Semaphore(1);
+//					// Mutex to access memory input split metadata queue					
+//					Semaphore memoryInputSplitMetadataQueueSemaphore = new Semaphore(1);
 					
 					// Thread loop until input split metadata queue is empty
 					while(true) {
@@ -239,18 +229,18 @@ public final class Encoder {
 						if(diskThread == false) {
 							// Thread will process memory input splits
 							
-							// Try enter memory input split metadata queue mutex 
-							try {
-								memoryInputSplitMetadataQueueSemaphore.acquire();
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
+//							// Try enter memory input split metadata queue mutex 
+//							try {
+//								memoryInputSplitMetadataQueueSemaphore.acquire();
+//							} catch (InterruptedException e) {
+//								e.printStackTrace();
+//							}
 
 							// Take an input split metadata to process
 							inputSplitToProcess = symbolCountMemoryInputSplitMetadataQueue.poll();
 							
-							// Release memory input split metadata queue mutex
-							memoryInputSplitMetadataQueueSemaphore.release();
+//							// Release memory input split metadata queue mutex
+//							memoryInputSplitMetadataQueueSemaphore.release();
 							
 							// Thread returns if memory input split metadata queue is empty 
 							if(inputSplitToProcess == null) { return; }
@@ -273,18 +263,17 @@ public final class Encoder {
 					}
 				}
 				
-				public void chunkToFrequency(InputSplit inputSplit) throws IOException, InterruptedException {
+				public void chunkToFrequency(InputSplit inputSplit) throws IOException {
 					// Try access a memory index to this split 
 					Integer memoryIndex = memoryPartMap.get(inputSplit.part);
 					
-					if(memoryIndex == null) {
-						// Split is in disk
-						
+					if(memoryIndex == null) { // Split is in disk
+						// Input file, path and stream
 						FileSystem fs = FileSystem.get(configuration);
 						Path path = new Path(fileName);
-						
 						FSDataInputStream f = fs.open(path);
 						
+						// Buffer to store data read from disk
 						byte[] buffer = new byte[Defines.readBufferSize];
 						
 						int readBytes = -1;
@@ -292,31 +281,20 @@ public final class Encoder {
 						while(totalReadBytes < inputSplit.length) {
 							readBytes = f.read(inputSplit.offset + totalReadBytes, buffer, 0, (totalReadBytes + Defines.readBufferSize > inputSplit.length ? inputSplit.length - totalReadBytes : Defines.readBufferSize));
 							for(int j = 0 ; j < readBytes ; j++) {
-								//frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
-								
-								this.frequencyArrayMutex.acquire();
-								containerTotalFrequencyArray[buffer[j] & 0xFF]++;
-								this.frequencyArrayMutex.release();
+								frequencyMatrix[this.threadId][buffer[j] & 0xFF]++;
 							}
 							
 							totalReadBytes += readBytes;
 						}
 					}
-					else {
-						// Split is in memory
-						
+					else { // Split is in memory
 						for (int j = 0; j < inputSplit.length ; j++) {
-							//frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
-							
-							this.frequencyArrayMutex.acquire();
-							containerTotalFrequencyArray[memory[memoryIndex][j] & 0xFF]++;
-							this.frequencyArrayMutex.release();
+							frequencyMatrix[this.threadId][(memory[memoryIndex][j] & 0xFF)]++;
 						}
 					}
 					
 					// Add EOF to symbol count
-					//frequencyMatrix[this.threadId][0]++;
-					
+					frequencyMatrix[this.threadId][0]++;
 				}
 			});
 			
@@ -332,13 +310,13 @@ public final class Encoder {
 			thread.join();
 		}
 		
-//		// Main thread sums all thread frequencies.
-//		this.containerTotalFrequencyArray = new long[Defines.twoPowerBitsCodification];		
-//		for(int i = 0 ; i < numTotalThreads ; i++) {
-//			for(int j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
-//				this.containerTotalFrequencyArray[j] += frequencyMatrix[i][j]; 
-//			}
-//		}
+		// Main thread sums all thread frequencies.
+		this.containerTotalFrequencyArray = new long[Defines.twoPowerBitsCodification];		
+		for(int i = 0 ; i < numTotalThreads ; i++) {
+			for(int j = 0 ; j < Defines.twoPowerBitsCodification ; j++) {
+				this.containerTotalFrequencyArray[j] += frequencyMatrix[i][j]; 
+			}
+		}
 		
 		// Matrix to store each slave serialized frequency (only master instantiates)
 		byte[][] serializedSlaveFrequency = null;
@@ -449,7 +427,6 @@ public final class Encoder {
 		    for(short i = 0 ; i < Defines.twoPowerBitsCodification ; i++) {
 		    	if(this.totalFrequencyArray[i] != 0) {
 		    		this.symbols++;
-		    		
 //
 		    		totalSymbols += this.totalFrequencyArray[i];
 		    	}
@@ -479,7 +456,7 @@ public final class Encoder {
 						socket = new Socket(containerPortPairArray[i].hostName, containerPortPairArray[i].port);
 						break;
 					} catch(Exception e) {
-						Thread.sleep(1000);
+						Thread.sleep(100);
 					}
 				}
 				
