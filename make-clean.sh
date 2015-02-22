@@ -1,4 +1,4 @@
 #!/bin/bash
 
 rm -r bin/*
-rm -r release/huffmanyarn.jar
+rm -r release/huffmanyarnmultithread.jar
