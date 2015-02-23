@@ -363,7 +363,7 @@ public final class Encoder {
 					socket = new Socket(this.masterContainerHostName, 9996);
 					break;
 				} catch(Exception e) {
-					Thread.sleep(1000);
+					Thread.sleep(100);
 				}
 			}
 			

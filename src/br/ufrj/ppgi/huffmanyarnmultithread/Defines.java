@@ -10,8 +10,8 @@ public class Defines {
 	public static final String amQueue = "default";
 	
 	
-	//public static final int containerMemory = 4096;
-	public static final int containerMemory = 512;
+	public static final int containerMemory = 4096;
+	//public static final int containerMemory = 512;
 	public static final int containerVCores = 8;
 	
 	
@@ -23,4 +23,14 @@ public class Defines {
 	
 	
 	public static final int readBufferSize = 4096;
+	
+	
+	
+	
+	
+	public static final String pathSuffix = ".yarnmultithreaddir/";
+	public static final String compressedPath = "compressed/";
+	public static final String compressedFileName = "part-";
+	public static final String codificationFileName = "codification";
+	public static final String decompressedFileName = "decompressed";
 }

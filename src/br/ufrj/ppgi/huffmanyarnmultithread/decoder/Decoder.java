@@ -10,6 +10,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import br.ufrj.ppgi.huffmanyarnmultithread.Defines;
 import br.ufrj.ppgi.huffmanyarnmultithread.SerializationUtility;
 import br.ufrj.ppgi.huffmanyarnmultithread.encoder.BitSet;
 import br.ufrj.ppgi.huffmanyarnmultithread.encoder.Codification;
@@ -23,11 +24,10 @@ public class Decoder {
 	byte[] codificationArrayElementSymbol;
 	boolean[] codificationArrayElementUsed;
 
-	public Decoder(String file_in, String file_out, String file_cb)
-			throws IOException {
-		in = new Path(file_in);
-		out = new Path(file_out);
-		cb = new Path(file_cb);
+	public Decoder(String fileName) throws IOException {
+		in = new Path(fileName + Defines.pathSuffix + Defines.compressedPath);
+		out = new Path(fileName + Defines.pathSuffix + Defines.decompressedFileName);
+		cb = new Path(fileName + Defines.pathSuffix + Defines.codificationFileName);
 
 		fileToCodification();
 		codeToTreeArray();

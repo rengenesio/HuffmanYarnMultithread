@@ -12,51 +12,57 @@ import br.ufrj.ppgi.huffmanyarnmultithread.yarn.Client;
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		long t, t1, t2;
-		String in, out, cb;
-		Configuration conf = new Configuration();
-		FileSystem fs = FileSystem.get(conf);
-
-		in = new String(args[0]);
-		out = new String(in);
-		cb = new String(in);
-		out += ".yarnmultithreaddir/compressed/";
-		cb += ".yarnmultithreaddir/codification";
-
-		try {
-			fs.delete(new Path(args[0] + ".yarnmultithreaddir"), true);
-		} catch(Exception ex) { }
+		if(args.length < 2) { System.out.println("Falta(m) parametro(s)!"); return; }
+		
+		boolean encoder = false;
+		boolean decoder = false;
+		
+		String fileName = args[0];
+		switch(args[1]) {
+		case "encoder":
+			encoder = true;
+			break;
 			
-
-		t1 = System.nanoTime();
-		Client client = new Client(args);
-		
-		if (client.run()) {
-			System.out.println("Compressão completa!");
+		case "decoder":
+			decoder = true;
+			break;
+			
+		case "both":
+			encoder = true;
+			decoder = true;
+			break;
 		}
-		else {
-			System.out.println("Erro durante a compressão");
-		}
 		
-		t2 = System.nanoTime();
-		t = t2 - t1;
-		System.out.println(t/1000000000.0 + " s (encoder)");
+		if(encoder) {
+			long totalTime, startTime, endTime;
 
-		in = new String(args[0]);
-		out = new String(in);
-		cb = new String(in);
-		in += ".yarnmultithreaddir/compressed/";
-		out += ".yarnmultithreaddir/decompressed";
-		cb += ".yarnmultithreaddir/codification";
-		
-		System.out.println(in);
-		System.out.println(out);
-		System.out.println(cb);
-		
-		t1 = System.nanoTime();
-		new Decoder(in, out, cb);
-		t2 = System.nanoTime();
-		t = t2 - t1;
-		System.out.println(t/1000000000.0 + " s (decoder)");
+			Configuration conf = new Configuration();
+			FileSystem fs = FileSystem.get(conf);
+	
+			try {
+				fs.delete(new Path(fileName + Defines.pathSuffix), true);
+			} catch(Exception ex) { }
+				
+			startTime = System.nanoTime();
+			Client client = new Client(args);
+			if (client.run()) { System.out.println("Compressão completa!"); } else { System.out.println("Erro durante a compressão"); return; }
+			endTime = System.nanoTime();
+			
+			totalTime = endTime - startTime;
+			
+			System.out.println(totalTime/1000000000.0 + " s (encoder)");
+		}
+
+		if(decoder) {
+			long totalTime, startTime, endTime;
+			
+			startTime = System.nanoTime();
+			new Decoder(fileName);
+			endTime = System.nanoTime();
+			
+			totalTime = endTime - startTime;
+			
+			System.out.println(totalTime / 1000000000.0 + " s (decoder)");
+		}
 	}
 }
