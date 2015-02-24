@@ -45,7 +45,18 @@ public class Main {
 				
 			startTime = System.nanoTime();
 			Client client = new Client(args);
-			if (client.run()) { System.out.println("Compressão completa!"); } else { System.out.println("Erro durante a compressão"); return; }
+			if (client.run()) { 
+				System.out.println("Compressão completa!");
+			}
+			else {
+				System.out.println("Erro durante a compressão");
+				endTime = System.nanoTime();
+				
+				totalTime = endTime - startTime;
+				
+				System.out.println(totalTime/1000000000.0 + " s (encoder)");
+				return;
+			}
 			endTime = System.nanoTime();
 			
 			totalTime = endTime - startTime;
