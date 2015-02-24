@@ -10,7 +10,7 @@ public class Defines {
 	public static final String amQueue = "default";
 	
 	
-	public static final int containerMemory = 4096;
+	public static final int containerMemory = 13312;
 	//public static final int containerMemory = 512;
 	public static final int containerVCores = 8;
 	
@@ -22,8 +22,8 @@ public class Defines {
 	public static final int twoPowerBitsCodification = 256;
 	
 	
-	public static final int readBufferSize = 4096;
-	public static final int maxChunksInMemory = 16;
+	public static final int readBufferSize = 8192;
+	public static final int maxChunksInMemory = 64;
 	
 	
 	
