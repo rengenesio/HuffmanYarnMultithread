@@ -23,7 +23,7 @@ public class Defines {
 	
 	
 	public static final int readBufferSize = 4096;
-	
+	public static final int maxChunksInMemory = 16;
 	
 	
 	

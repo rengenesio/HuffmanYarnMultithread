@@ -710,7 +710,7 @@ public final class Encoder {
 
 		boolean memoryFull = false;
 		for(int i = 0 ; i < this.inputSplitCollection.size() ; i++) {
-			if(memoryFull == false) {
+			if(i < Defines.maxChunksInMemory && memoryFull == false) {
 				try {
 					// Tenta alocar espaço na memória para este chunk. Se não conseguir, um erro será lançado e capturado
 					memory[i] = new byte[(int) inputSplitCollection.get(i).length];
@@ -728,6 +728,8 @@ public final class Encoder {
 					System.out.println("Memória: " + inputSplitCollection.get(i));
 				}
 				catch(Error error) {
+					System.out.println("Memória encheu! chunks carregados: " + i);
+					
 					// Adiciona este chunk na lista de ações a serem feitas do disco
 					symbolCountDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
 					encoderDiskInputSplitMetadataQueue.add(inputSplitCollection.get(i));
